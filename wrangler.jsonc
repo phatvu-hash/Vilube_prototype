@@ -1,17 +1,26 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "vilube-prototype",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-09-09",
   // Tự chạy Vite build trước khi deploy. Nhờ vậy Cloudflare Workers Builds
   // (CI từ GitHub) chạy được kể cả khi ô "Build command" trong dashboard để None.
   "build": {
     "command": "npm run build"
   },
+  "vars": {
+    // Id của Google Sheet chứa hai tab DON_NHAP và DON_XUAT.
+    // Để trống thì Worker trả bộ dữ liệu mẫu trong code — app vẫn chạy được.
+    // Sheet cần chia sẻ ở mức "ai có link đều xem được".
+    "SHEET_ID": ""
+  },
   // App là SPA tĩnh (Vite build ra ./dist) — Worker chỉ phục vụ static assets.
   // single-page-application: mọi route (vd /m/nhap/asn-1) đều trả index.html
   // để react-router xử lý, tránh 404 khi mở link trực tiếp hoặc F5.
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Chỉ /api/* mới vào Worker; đường dẫn khác vẫn rơi về SPA như trên.
+    "run_worker_first": ["/api/*"]
   }
 }

@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useApp, useWhKind } from '@/store'
-import { itemById } from '@/data/items'
-import { locationById, partnerById } from '@/data/mock'
+import { itemById } from '@shared/items'
+import { locationById } from '@shared/catalog'
 import { toast } from '@/lib/toast'
 import { fmt } from '@/lib/utils'
-import { fmtQty, fromUnit, toUnit, unitsOf } from '@/lib/uom'
+import { fmtQty, fromUnit, toUnit, unitsOf } from '@shared/uom'
 import { useT } from '@/i18n'
 import { MobileAppBar } from '@/components/mobile/MobileAppBar'
 import { ScanField } from '@/components/ui/ScanField'
@@ -184,7 +184,7 @@ export function SoanDetail() {
         meta={[
           { label: t('Số đơn hàng'), value: order.soNumber },
           { label: t('Mã đơn hàng'), value: order.code },
-          { label: t('Khách hàng'), value: partnerById[order.customerId]?.name },
+          { label: t('Khách hàng'), value: order.customerName },
         ]}
         lines={order.lines.map((l) => ({
           id: l.id,

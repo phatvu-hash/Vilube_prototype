@@ -237,8 +237,18 @@ const EN: Record<string, string> = {
   'Nhân viên nhận hàng': 'Receiver',
   'Dòng tồn kho': 'Inventory lines',
   'Lần nhập chủ động': 'Direct receipts',
-  'Khôi phục dữ liệu demo': 'Reset demo data',
-  'Đã khôi phục dữ liệu demo ban đầu': 'Demo data has been reset',
+  'Tải lại dữ liệu đơn hàng': 'Reload order data',
+  'Đã tải lại dữ liệu đơn hàng': 'Order data reloaded',
+
+  // ---------- Nguồn dữ liệu ----------
+  'Đang tải dữ liệu đơn hàng…': 'Loading order data…',
+  'Đã tải {0} đơn nhập · {1} đơn xuất · lúc {2}': 'Loaded {0} inbound · {1} outbound · at {2}',
+  'Đang dùng dữ liệu mẫu offline': 'Using offline sample data',
+  'Tải lại': 'Reload',
+  'Bỏ qua {0} dòng do lỗi': '{0} rows skipped because of errors',
+  'Xem chi tiết': 'View details',
+  'Dòng bị bỏ qua': 'Skipped rows',
+  'Tab {0} · dòng {1} · cột {2}': 'Tab {0} · row {1} · column {2}',
 }
 
 /** Thay {0}, {1}… bằng tham số truyền vào */

@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { Boxes, Check, Droplets, Globe } from 'lucide-react'
 import { useApp } from '@/store'
 import { useLang, useT, type Lang } from '@/i18n'
-import { warehouses } from '@/data/mock'
+import { warehouses } from '@shared/catalog'
 import { toast } from '@/lib/toast'
 import { Button } from '@/components/ui/Button'
 import { ScreenScroll } from '@/components/mobile/parts'
+import { DataStatus } from '@/components/mobile/DataStatus'
 import { cn } from '@/lib/utils'
 
 const ICON = { BB: Boxes, NVL: Droplets } as const
@@ -29,12 +30,13 @@ export function ChonKho() {
   const user = useApp((s) => s.user)
   const current = useApp((s) => s.warehouseId)
   const setWarehouse = useApp((s) => s.setWarehouse)
+  const loading = useApp((s) => s.load) === 'loading'
 
   const [picked, setPicked] = useState(current ?? warehouses[0].id)
   const wh = warehouses.find((w) => w.id === picked)
 
   const enter = () => {
-    if (!wh) return
+    if (!wh || loading) return
     setWarehouse(wh.id)
     toast(t('Đã vào {0}', t(wh.name)))
     nav('/m', { replace: true })
@@ -81,6 +83,8 @@ export function ChonKho() {
           </div>
         </div>
 
+        <DataStatus />
+
         {warehouses.map((w) => {
           const Icon = ICON[w.kind]
           const on = w.id === picked
@@ -121,8 +125,8 @@ export function ChonKho() {
       </ScreenScroll>
 
       <div className="shrink-0 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button block onClick={enter}>
-          {t('VÀO KHO')}
+        <Button block onClick={enter} disabled={loading}>
+          {loading ? t('Đang tải dữ liệu đơn hàng…') : t('VÀO KHO')}
         </Button>
       </div>
     </>

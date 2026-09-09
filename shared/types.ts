@@ -16,13 +16,6 @@ export interface Warehouse {
   hint: string
 }
 
-export interface Partner {
-  id: string
-  code: string
-  name: string
-  type: 'supplier' | 'customer'
-}
-
 export interface Location {
   id: string
   whId: string
@@ -63,7 +56,7 @@ export interface Asn {
   whId: string
   code: string // mã đơn
   pnk: string // số đơn nhập
-  supplierId: string
+  supplierName: string
   type: string // loại đơn nhập
   deliveryDate: string
   note?: string
@@ -124,7 +117,7 @@ export interface PickOrder {
   whId: string
   soNumber: string // số đơn hàng
   code: string // mã đơn hàng
-  customerId: string
+  customerName: string
   deliveryDate: string
   note?: string
   status: PickStatus

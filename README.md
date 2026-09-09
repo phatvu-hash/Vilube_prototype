@@ -1,12 +1,10 @@
-# WMS Vilube — Prototype app handheld (Kho Bao Bì)
+# WMS Vilube — Prototype app handheld
 
 > Repo phục vụ mục đích proposal.
 
-Prototype mobile app WMS cho **Kho Bao Bì Vilube**, dựng theo:
-
-- Nghiệp vụ: `HDSD-WMS-kho-bao-bi.docx` (4 phần thao tác trên handheld)
-- Dữ liệu: `Masterdata-HangHoa-Vilube.xlsx` (ITEM_MASTER + PACKING_STANDARDS)
-- Giao diện / UX: đồng bộ prototype **WMS Hương Thủy** (cùng design system Smartlog WMS)
+Prototype mobile app WMS cho **Kho Bao Bì** và **Kho Nguyên vật liệu** Vilube, dựng theo
+`HDSD-WMS-VILUBE.docx`. Giao diện đồng bộ prototype WMS Hương Thủy (cùng design system
+Smartlog WMS).
 
 ## Link demo
 
@@ -16,102 +14,142 @@ https://vilube-prototype.phat-vu.workers.dev
 
 ```bash
 npm install
-npm run dev      # mở http://localhost:5173/m
+npm run dev      # Vite ở http://localhost:5173
+npm run dev:api  # Worker ở http://localhost:8787 (cửa sổ terminal thứ hai)
 ```
 
-Trên desktop app hiển thị trong **khung máy handheld kho** (bezel dày, nút quét vàng bên hông,
-thanh trạng thái giả lập) và luôn nằm chính giữa cửa sổ trình duyệt — khung tự co lại khi
-cửa sổ thấp. Mở bằng điện thoại thật thì bỏ khung, app chiếm trọn màn hình.
+Vite proxy `/api` sang Worker nên chạy đủ hai lệnh mới có dữ liệu đơn hàng thật; thiếu Worker
+thì app tự rơi về bộ dữ liệu mẫu. Muốn thử đúng như production thì `npm run build` rồi
+`npx wrangler dev` — Worker phục vụ cả file tĩnh lẫn API trên cổng 8787.
 
-## Phạm vi — đúng 4 luồng trong HDSD
+```bash
+npm test         # vitest — kiểm bộ đọc Google Sheet
+```
+
+Trên desktop app hiển thị trong khung máy handheld kho và nằm chính giữa cửa sổ; mở bằng điện
+thoại thật thì bỏ khung, app chiếm trọn màn hình.
+
+## Hai kho, hai giao diện
+
+Mở app là vào màn hình **Chọn kho thao tác** (`/kho`) trước, cũng là nơi đổi ngôn ngữ Việt/Anh
+và xem trạng thái dữ liệu. Chưa chọn kho thì không vào được màn hình chính.
+
+| Hạng mục | Kho Bao Bì | Kho Nguyên vật liệu |
+|---|---|---|
+| Mã quản lý tồn | Pallet ID | Drum ID |
+| Đơn vị tính | CÁI · THÙNG · PALLET | KG · DRUM · PALLET |
+| Nhận hàng | 2 thẻ NHÃN / KHÁC NHÃN | 1 luồng quét DRUMID |
+| Cất hàng | quét PALLETID → vị trí | quét MÃ HÀNG → DRUMID → vị trí |
+| Soạn hàng | quét Pallet ID | quét Drum ID |
+| Khu vực | 1001–1003 (A · B · C) | 2001–2002 (D · E) |
+
+## Bốn luồng trong HDSD
 
 | Phần HDSD | Màn hình | Route |
 |---|---|---|
-| 1. Nhận hàng | Danh sách công việc → Chi tiết nhập hàng (Thẻ nhãn / Thẻ khác nhãn) | `/m` → `/m/nhap/:asnId` |
+| 1. Nhận hàng | Danh sách công việc → Chi tiết nhập hàng | `/m` → `/m/nhap/:asnId` |
 | 2. Cất hàng | Danh sách công việc → Cất hàng | `/m` → `/m/cat/:taskId` |
 | 3. Nhập hàng chủ động | Khác → Nhập hàng | `/m/khac` → `/m/nhan-hang` |
-| 4. Soạn hàng theo phiếu soạn tổng | Danh sách công việc → Chi tiết soạn hàng | `/m` → `/m/soan/:orderId` |
-
-Thanh điều hướng dưới: **Công việc · Khác · Cá nhân**.
-Bộ lọc tính năng (icon bên phải ô tìm kiếm): **Nhận hàng / Cất hàng / Soạn hàng**.
-
-## Luồng dữ liệu (state thật, không phải màn hình tĩnh)
+| 4. Soạn hàng | Danh sách công việc → Chi tiết soạn hàng | `/m` → `/m/soan/:orderId` |
 
 ```
-Nhận hàng  → sinh pallet chờ cất → Cất hàng → cộng tồn kho
-                                                   ↓
-Nhập hàng chủ động → sinh pallet chờ cất ─────────┘
-                                                   ↓
-                                     Soạn hàng → trừ tồn kho
+Nhận hàng  → sinh pallet/phuy chờ cất → Cất hàng → cộng tồn kho
+                                                        ↓
+Nhập hàng chủ động → sinh pallet chờ cất ─────────────┘
+                                                        ↓
+                                          Soạn hàng → trừ tồn kho
 ```
 
-- Nhận từng carton / từng pallet, cộng dồn theo dòng hàng, đơn tự chuyển trạng thái
-  `Mới → Nhận một phần → Đã nhận`.
-- Cất hàng: quét PalletID → hiện **vị trí đề xuất** cỡ lớn, nút `»` lấy vị trí khác,
-  quét *Đến vị trí* rồi xác nhận.
-- Soạn hàng: đi lần lượt từng dòng của phiếu soạn tổng (Khu vực → Vị trí → quét Pallet ID
-  → nhập số lượng), soạn xong dòng nào tự nhảy dòng kế tiếp.
-- Màn **Cá nhân** có nút *Khôi phục dữ liệu demo* để chạy lại từ đầu.
+## Nguồn dữ liệu đơn hàng
 
-## Dữ liệu hàng hoá
+Đơn nhập và đơn xuất **không nhập trên app** — chúng được soạn trên một Google Sheet dùng
+chung, giống hệ thống thật nơi đơn được tạo trên web trước rồi mới tới bước thao tác handheld.
 
-`src/data/items.ts` được sinh từ `Masterdata-HangHoa-Vilube.xlsx`: 35 mã hàng thật
-(lọc `inTruckingSchedule = Y`), trải đều các nhóm quy cách CARTON / DRUM / PAIL / JCAN,
-kèm số lượng/thùng, số kiện/pallet, trọng lượng kiện.
+```
+Google Sheet (DON_NHAP, DON_XUAT)
+        ↓  gviz CSV
+Worker  /api/donhang          ← đọc hộ ở phía server: tránh CORS, tránh cache
+        ↓  JSON               của link publish-to-web, và không lộ id Sheet
+App     màn hình Chọn kho
+```
 
-Đơn vị tính hiển thị bám theo nhóm quy cách — đúng như HDSD:
+Cấu hình: đặt `SHEET_ID` trong `vars` của `wrangler.jsonc`, Sheet chia sẻ ở mức *ai có link
+đều xem được*. Để trống thì Worker trả bộ dữ liệu mẫu trong `shared/sample.ts` — app vẫn chạy
+đầy đủ, tiện khi phát triển hoặc mất mạng giữa buổi demo.
 
-| Nhóm quy cách | Đơn vị tính |
-|---|---|
-| CARTON (12X1L, 4X4L…) | CÁI · THÙNG · PALLET |
-| DRUM (200L, 60L) | KG · DRUM · PALLET |
-| PAIL / JCAN (18–20L) | CÁI · PALLET |
+File template cho team nhập liệu: `Template-DonHang-WMS-Vilube.xlsx` (sinh bằng
+`scripts/make-template.py`, nội dung lấy thẳng từ `shared/sample.ts` nên không lệch với code).
 
-Quy đổi giữa các đơn vị dùng đúng quy cách trong masterdata (ví dụ đổi THÙNG ↔ CÁI
-theo `unitsPerCarton`, PALLET theo `cartonsPerPallet`).
+**Dòng nào sai thì bị bỏ qua, phần còn lại vẫn tải** và app báo rõ tab / dòng / cột sai ở màn
+hình Chọn kho. Chọn vậy để giữa buổi demo một ô gõ nhầm không làm chết cả app.
 
-## Giả định đã bổ sung (ngoài HDSD)
+## Masterdata
 
-HDSD chỉ mô tả thao tác của nhân viên kho nên vài chỗ cần bổ sung để prototype chạy liền mạch:
+`shared/items.ts` là **dữ liệu demo**: 16 mã bao bì và 13 mã dầu gốc / phụ gia, quy cách đóng
+gói và quy đổi đơn vị nhất quán. Chỉ mã `9082228` lấy từ tem carton thật in trong HDSD; phần
+còn lại dựng theo quy cách phổ biến của ngành, chờ danh mục thật của khách.
 
-1. **Mô phỏng máy quét** — handheld thật thì bắn máy quét. Ở đây chạm icon quét sẽ mở
-   danh sách mã hợp lệ để chọn (carton, pallet, vị trí, mã hàng). Ô nhập tay vẫn dùng được.
-2. **Số lô nội bộ** tự sinh theo mẫu trong HDSD: `ddMMyy(NSX)-ddMMyy(ngày nhập)`.
-3. **Pallet cho Thẻ nhãn** — HDSD chỉ quét carton, không nhập Pallet ID. Prototype tự gom
-   carton cùng dòng hàng vào một pallet `PLT-<mã đơn>-<số dòng>` để có cái mà cất.
-4. **Nhập hàng chủ động** sau khi nhận sẽ tạo luôn công việc *Cất hàng* (HDSD không nói rõ
-   bước kế tiếp).
-5. Hai ô **Tồn Kho / Di Chuyển** ở màn *Khác* có trong ảnh HDSD nhưng chưa có mô tả thao tác
-   → hiển thị đúng vị trí, bấm vào báo "chưa có trong tài liệu".
+Danh mục dầu nhờn thành phẩm trong `Masterdata-HangHoa-Vilube.xlsx` không dùng ở đây: hai kho
+này quản lý bao bì và nguyên vật liệu, không quản lý thành phẩm.
+
+## Barcode tem carton (kho Bao Bì)
+
+```
+9082228 | 3000 | PCE | 0008083
+mã hàng   SL     ĐVT   mã kiểm tra trùng
+```
+
+Thứ tự kiểm tra khi quét: sai định dạng → trùng mã kiểm tra → mã hàng không thuộc đơn → đơn vị
+chưa khai báo → vượt số còn lại. Việc kiểm tra chạy khi **bắn xong mã** (Enter, rời ô, hoặc
+chọn trong danh sách mô phỏng) chứ không theo từng ký tự gõ tay — giống máy quét thật nạp trọn
+chuỗi rồi mới gửi Enter.
 
 ## Cấu trúc
 
 ```
+shared/          dùng chung app + Worker, chỉ import tương đối
+  types.ts       kiểu miền
+  items.ts       masterdata hàng hoá (demo)
+  catalog.ts     kho, vị trí, loại đơn
+  uom.ts         quy đổi đơn vị theo quy cách
+  barcode.ts     đọc / dựng barcode tem carton
+  sheet.ts       parse CSV → đơn nhập, đơn xuất, tồn, công việc cất hàng
+  sheet.test.ts  vitest cho toàn bộ shared/sheet.ts
+  sample.ts      CSV mẫu — vừa là bản dự phòng, vừa là nội dung template
+worker/index.ts  đọc Google Sheet, phục vụ /api/donhang
 src/
-  data/items.ts        masterdata hàng hoá (sinh từ file Excel)
-  data/mock.ts         kho, vị trí, đối tác, đơn nhập, phiếu soạn, tồn
-  store.ts             zustand — toàn bộ nghiệp vụ 4 luồng
-  lib/uom.ts           quy đổi đơn vị theo quy cách
-  components/mobile/   khung điện thoại, app bar, bottom nav, sheet, popup
-  components/ui/       Button, InputField, SelectField, ScanField, UomSegment…
-  screens/mobile/      WorkList, NhapDetail, CatDetail, SoanDetail, Khac, NhanHang, CaNhan
-docs/screenshots/      ảnh chụp các màn đã dựng
+  store.ts       zustand — nghiệp vụ 4 luồng + tải dữ liệu
+  i18n.ts        từ điển Việt → Anh
+  components/    khung máy, app bar, bottom nav, sheet, popup, field
+  screens/mobile ChonKho, WorkList, NhapDetail, CatDetail, SoanDetail, Khac, NhanHang, CaNhan
+scripts/         sinh file template .xlsx
 ```
 
-Ảnh màn hình các bước xem trong `docs/screenshots/`.
+## Giả định đã bổ sung (ngoài HDSD)
+
+1. **Mô phỏng máy quét** — chạm icon quét mở danh sách mã hợp lệ để chọn. Ô nhập tay vẫn dùng
+   được, và gõ tay rồi Enter cũng chạy đúng luồng kiểm tra.
+2. **Số lô nội bộ** tự sinh theo mẫu trong HDSD: `ddMMyy(NSX)-ddMMyy(ngày nhập)`.
+3. **Pallet cho Thẻ nhãn** — HDSD chỉ quét carton, không nhập Pallet ID; prototype gom carton
+   cùng dòng hàng vào một pallet `PLT-<mã đơn>-<số dòng>` để có cái mà cất.
+4. **Nhập hàng chủ động** sau khi nhận sẽ tạo luôn công việc Cất hàng.
+5. **Cột `DA_NHAN`** trong Sheet cho phép dựng sẵn hàng đã nhận, để demo Cất hàng mà không phải
+   bấm nhận hàng trước.
+6. Hai ô **Tồn Kho / Di Chuyển** ở màn Khác có trong ảnh HDSD nhưng chưa có mô tả thao tác →
+   hiển thị đúng vị trí, bấm vào báo "chưa có trong tài liệu".
+
+Danh sách đầy đủ những điểm cần khách chốt nằm ở Phần 5.6 và Phần 6 của `HDSD-WMS-VILUBE.docx`.
 
 ## Deploy
-
-App chạy trên **Cloudflare Workers** dưới dạng SPA tĩnh (`wrangler.jsonc`).
 
 ```bash
 npx wrangler login   # lần đầu
 npm run deploy       # wrangler tự chạy Vite build rồi deploy
 ```
 
-Đẩy code lên nhánh `main` của `phatvu-hash/Vilube_prototype` thì Cloudflare Workers Builds
-tự build và deploy. Lệnh build nằm trong `wrangler.jsonc` (`build.command`) chứ không đặt ở
-dashboard, nên CI chạy được với cấu hình mặc định (ô *Build command* để `None` vẫn đúng).
+Đẩy code lên nhánh `main` của `phatvu-hash/Vilube_prototype` thì Cloudflare Workers Builds tự
+build và deploy. Lệnh build nằm trong `wrangler.jsonc` (`build.command`) chứ không đặt ở
+dashboard, nên CI chạy được với ô *Build command* để `None`.
 
-`assets.not_found_handling = "single-page-application"` để mở thẳng link sâu
-(vd `/m/nhap/asn-1`) hoặc F5 không bị 404.
+`assets.not_found_handling = "single-page-application"` để link sâu (vd `/m/nhap/asn-1`) và F5
+không bị 404; `assets.run_worker_first = ["/api/*"]` để riêng `/api/*` đi vào Worker.

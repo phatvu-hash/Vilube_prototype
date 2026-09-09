@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp, useWhKind, type WorkFeature } from '@/store'
-import { partnerById, warehouseById } from '@/data/mock'
-import { itemById } from '@/data/items'
+import { warehouseById } from '@shared/catalog'
+import { itemById } from '@shared/items'
 import { fmtDate } from '@/lib/utils'
 import { useT } from '@/i18n'
 import { Button } from '@/components/ui/Button'
@@ -66,7 +66,7 @@ export function WorkList() {
             : !a.assignedTo && a.status !== 'RECEIVED'
         if (!ok) return false
         if (!kw) return true
-        return [a.code, a.pnk, partnerById[a.supplierId]?.name ?? ''].some((x) => norm(x).includes(kw))
+        return [a.code, a.pnk, a.supplierName].some((x) => norm(x).includes(kw))
       }),
     [asns, whId, done, mine, user.id, kw],
   )
@@ -100,7 +100,7 @@ export function WorkList() {
             : !o.assignedTo && o.status !== 'PICKED'
         if (!ok) return false
         if (!kw) return true
-        return [o.soNumber, o.code, partnerById[o.customerId]?.name ?? ''].some((x) => norm(x).includes(kw))
+        return [o.soNumber, o.code, o.customerName].some((x) => norm(x).includes(kw))
       }),
     [pickOrders, whId, done, mine, user.id, kw],
   )
@@ -157,7 +157,7 @@ export function WorkList() {
               >
                 <Row
                   label={t('Nhà cung cấp')}
-                  value={partnerById[a.supplierId]?.name}
+                  value={a.supplierName}
                   rLabel={t('Ngày giao hàng')}
                   rValue={fmtDate(a.deliveryDate)}
                 />
@@ -261,7 +261,7 @@ export function WorkList() {
                 />
                 <Row
                   label={t('Khách hàng')}
-                  value={partnerById[o.customerId]?.name}
+                  value={o.customerName}
                   rLabel={t('Mã đơn hàng')}
                   rValue={o.code}
                 />

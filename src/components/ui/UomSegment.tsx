@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { fmtQty } from '@/lib/uom'
+import { fmtQty } from '@shared/uom'
 
 interface Props {
   qty: number

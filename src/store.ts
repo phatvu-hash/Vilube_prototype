@@ -7,18 +7,28 @@ import type {
   PutawayTask,
   Role,
   WarehouseKind,
-} from '@/types'
-import {
-  WH_BB,
-  asns as seedAsns,
-  demoUsers,
-  inventory as seedInventory,
-  kindOf,
-  mkLotInternal,
-  pickOrders as seedPickOrders,
-  putaways as seedPutaways,
-  storageLocationsOf,
-} from '@/data/mock'
+} from '@shared/types'
+import { WH_BB, kindOf, mkLotInternal, storageLocationsOf } from '@shared/catalog'
+import type { SheetError } from '@shared/sheet'
+import { sampleDataSet } from '@shared/sample'
+
+/** Người dùng demo — prototype chưa có đăng nhập */
+const demoUser = { id: 'u-1', name: 'Nguyễn Văn Tâm', code: 'NV001', role: 'thukho' as const }
+
+/** Nguồn dữ liệu đang dùng: đọc từ Google Sheet hay bộ mẫu trong code */
+export type DataSource = 'sheet' | 'sample'
+export type LoadState = 'loading' | 'ready' | 'error'
+
+interface DonHangResponse {
+  asns: Asn[]
+  putaways: PutawayTask[]
+  pickOrders: PickOrder[]
+  inventory: InventoryRow[]
+  errors: SheetError[]
+  generatedAt: string
+  source: DataSource
+  notice?: string
+}
 
 export interface SessionUser {
   id: string
@@ -53,6 +63,15 @@ interface AppState {
   receipts: DirectReceipt[]
   workFeature: WorkFeature
 
+  // ---- nguồn dữ liệu ----
+  load: LoadState
+  source: DataSource
+  generatedAt: string
+  sheetErrors: SheetError[]
+  notice?: string
+  /** Tải đơn nhập/xuất từ Worker; refresh=true bỏ qua cache 60 giây */
+  loadData: (refresh?: boolean) => Promise<void>
+
   setWarehouse: (id: string) => void
   setWorkFeature: (f: WorkFeature) => void
   claim: (kind: 'asn' | 'putaway' | 'pick', id: string) => void
@@ -65,14 +84,7 @@ interface AppState {
   putaway: (taskId: string, palletId: string, locationId: string) => void
   /** Soạn hàng: xác nhận số lượng đã soạn cho 1 dòng → trừ tồn */
   pick: (orderId: string, lineId: string, qty: number) => void
-
-  resetDemo: () => void
 }
-
-const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x))
-
-const u = demoUsers[0]
-const sessionUser: SessionUser = { id: u.id, name: u.name, code: u.code, role: u.role }
 
 let seq = 100
 const nextId = (p: string) => `${p}-${++seq}`
@@ -85,14 +97,55 @@ export function nextSuggestion(whId: string, currentLocationId: string): string 
 }
 
 export const useApp = create<AppState>((set) => ({
-  user: sessionUser,
+  user: demoUser,
   warehouseId: null,
-  asns: clone(seedAsns),
-  putaways: clone(seedPutaways),
-  pickOrders: clone(seedPickOrders),
-  inventory: clone(seedInventory),
+  asns: [],
+  putaways: [],
+  pickOrders: [],
+  inventory: [],
   receipts: [],
   workFeature: 'nhan',
+
+  load: 'loading',
+  source: 'sample',
+  generatedAt: '',
+  sheetErrors: [],
+
+  loadData: async (refresh = false) => {
+    set({ load: 'loading' })
+    try {
+      const res = await fetch(`/api/donhang${refresh ? '?refresh=1' : ''}`)
+      if (!res.ok) throw new Error(`API trả mã ${res.status}`)
+      const d: DonHangResponse = await res.json()
+      set({
+        asns: d.asns,
+        putaways: d.putaways,
+        pickOrders: d.pickOrders,
+        inventory: d.inventory,
+        receipts: [],
+        sheetErrors: d.errors ?? [],
+        generatedAt: d.generatedAt,
+        source: d.source,
+        notice: d.notice,
+        load: 'ready',
+      })
+    } catch (err) {
+      // Mất mạng thì vẫn demo được bằng bộ mẫu dựng sẵn trong code
+      const d = sampleDataSet()
+      set({
+        asns: d.asns,
+        putaways: d.putaways,
+        pickOrders: d.pickOrders,
+        inventory: d.inventory,
+        receipts: [],
+        sheetErrors: d.errors,
+        generatedAt: new Date().toISOString(),
+        source: 'sample',
+        notice: `Không gọi được máy chủ nên đang dùng bộ dữ liệu mẫu. ${(err as Error).message}`,
+        load: 'ready',
+      })
+    }
+  },
 
   setWarehouse: (warehouseId) => set({ warehouseId, workFeature: 'nhan' }),
   setWorkFeature: (workFeature) => set({ workFeature }),
@@ -273,14 +326,6 @@ export const useApp = create<AppState>((set) => ({
       return { pickOrders, inventory }
     }),
 
-  resetDemo: () =>
-    set({
-      asns: clone(seedAsns),
-      putaways: clone(seedPutaways),
-      pickOrders: clone(seedPickOrders),
-      inventory: clone(seedInventory),
-      receipts: [],
-    }),
 }))
 
 /** Loại kho đang thao tác — BB (bao bì) hoặc NVL (nguyên vật liệu) */

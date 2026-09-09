@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useApp } from '@/store'
 import { PhoneFrame } from '@/components/mobile/PhoneFrame'
@@ -19,6 +20,13 @@ function RequireWarehouse({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const loadData = useApp((s) => s.loadData)
+
+  // Tải đơn nhập/xuất một lần khi mở app; nút Tải lại gọi lại với refresh=true
+  useEffect(() => {
+    void loadData()
+  }, [loadData])
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/kho" replace />} />

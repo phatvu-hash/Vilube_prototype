@@ -1,18 +1,15 @@
-import type { ItemMaster } from '@/data/items'
-import type { WarehouseKind } from '@/types'
+import type { ItemMaster } from './items'
+import type { WarehouseKind } from './types'
 
 /**
  * Đơn vị tính theo nhóm quy cách (bám HDSD):
- *  - Hàng thùng (CARTON)  → CÁI · THÙNG · PALLET
- *  - Hàng phuy   (DRUM)   → KG  · DRUM  · PALLET
- *  - Pail / Jerrycan      → CÁI · PALLET
+ *  - Bao bì (CARTON) → CÁI · THÙNG · PALLET
+ *  - Phuy   (DRUM)   → KG  · DRUM  · PALLET
  */
 export function unitsOf(item?: ItemMaster, wh: WarehouseKind = 'BB'): string[] {
   // chưa chọn hàng thì lấy bộ đơn vị mặc định của kho đang thao tác
   if (!item) return wh === 'NVL' ? ['KG', 'DRUM', 'PALLET'] : ['CÁI', 'THÙNG', 'PALLET']
-  if (item.group === 'DRUM') return ['KG', 'DRUM', 'PALLET']
-  if (item.group === 'PAIL' || item.group === 'JCAN') return ['CÁI', 'PALLET']
-  return ['CÁI', 'THÙNG', 'PALLET']
+  return item.group === 'DRUM' ? ['KG', 'DRUM', 'PALLET'] : ['CÁI', 'THÙNG', 'PALLET']
 }
 
 /** Đơn vị cơ sở (đơn vị nhỏ nhất dùng để lưu số lượng) */
@@ -27,10 +24,6 @@ export function unitRatio(item: ItemMaster | undefined, unit: string): number {
     if (unit === 'DRUM') return item.kgPerCarton
     if (unit === 'PALLET') return item.kgPerCarton * item.cartonsPerPallet
     return 1 // KG
-  }
-  if (item.group === 'PAIL' || item.group === 'JCAN') {
-    if (unit === 'PALLET') return item.cartonsPerPallet
-    return 1 // CÁI
   }
   if (unit === 'THÙNG') return item.unitsPerCarton
   if (unit === 'PALLET') return item.unitsPerCarton * item.cartonsPerPallet

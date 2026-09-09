@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeftRight, RotateCcw } from 'lucide-react'
 import { useApp } from '@/store'
-import { warehouseById } from '@/data/mock'
+import { warehouseById } from '@shared/catalog'
 import { toast } from '@/lib/toast'
 import { useT } from '@/i18n'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +18,7 @@ export function CaNhan() {
   const t = useT()
   const user = useApp((s) => s.user)
   const whId = useApp((s) => s.warehouseId)
-  const resetDemo = useApp((s) => s.resetDemo)
+  const loadData = useApp((s) => s.loadData)
   const receipts = useApp((s) => s.receipts)
   const inventory = useApp((s) => s.inventory)
 
@@ -57,12 +57,12 @@ export function CaNhan() {
         <Button
           variant="outline"
           block
-          onClick={() => {
-            resetDemo()
-            toast(t('Đã khôi phục dữ liệu demo ban đầu'))
+          onClick={async () => {
+            await loadData(true)
+            toast(t('Đã tải lại dữ liệu đơn hàng'))
           }}
         >
-          <RotateCcw className="size-5" /> {t('Khôi phục dữ liệu demo')}
+          <RotateCcw className="size-5" /> {t('Tải lại dữ liệu đơn hàng')}
         </Button>
       </ScreenScroll>
     </>
