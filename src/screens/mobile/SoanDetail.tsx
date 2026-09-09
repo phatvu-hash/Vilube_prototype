@@ -90,7 +90,7 @@ export function SoanDetail() {
         }}
       />
 
-      <ScreenScroll className="space-y-2 px-4 py-3">
+      <ScreenScroll className="form-fill px-4 py-3">
         {!line ? (
           <div className="py-16 text-center text-[15px] text-muted">Phiếu này đã soạn xong.</div>
         ) : (

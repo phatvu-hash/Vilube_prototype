@@ -186,7 +186,7 @@ export function NhapDetail() {
     <>
       <MobileAppBar title="Chi tiết nhập hàng" onDoc={() => setDoc(true)} />
 
-      <ScreenScroll className="space-y-2 px-4 py-3">
+      <ScreenScroll className="form-fill px-4 py-3">
         <SegmentTabs
           tabs={TABS}
           active={tab}

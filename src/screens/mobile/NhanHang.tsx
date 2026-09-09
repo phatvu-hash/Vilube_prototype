@@ -111,7 +111,7 @@ export function NhanHang() {
     <>
       <MobileAppBar title="Nhận hàng" doc />
 
-      <ScreenScroll className="space-y-2 px-4 py-3">
+      <ScreenScroll className="form-fill px-4 py-3">
         <SelectField
           label="Loại đơn hàng nhập"
           required

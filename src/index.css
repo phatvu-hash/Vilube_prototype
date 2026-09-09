@@ -151,3 +151,19 @@ input[type='date']::-webkit-date-and-time-value {
     display: flex;
   }
 }
+
+/* ============================================================
+   Form lấp đầy chiều cao màn hình máy.
+   Các ô giãn đều theo phần trống còn lại → không để khoảng trắng ở đáy,
+   đồng thời vùng chạm to hơn (thao tác nhanh khi đeo găng).
+   flex-shrink = 0 để khi màn hình quá ngắn thì cuộn chứ không bóp méo ô.
+   ============================================================ */
+.form-fill {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-fill > * {
+  flex: 1 0 auto;
+}

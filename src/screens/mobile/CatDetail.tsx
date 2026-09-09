@@ -69,7 +69,7 @@ export function CatDetail() {
     <>
       <MobileAppBar title="Cất hàng" onDoc={() => setDoc(true)} />
 
-      <ScreenScroll className="space-y-2 px-4 py-3">
+      <ScreenScroll className="form-fill px-4 py-3">
         {pending.length === 0 ? (
           <div className="py-16 text-center text-[15px] text-muted">Công việc này đã cất xong.</div>
         ) : (
