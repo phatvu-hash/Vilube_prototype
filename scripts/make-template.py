@@ -49,7 +49,7 @@ NOTES = {
 }
 
 
-def write_table(ws, csv_text, title_note):
+def write_table(ws, csv_text):
     rows = list(csv.reader(io.StringIO(csv_text)))
     header, body = rows[0], rows[1:]
 
@@ -78,9 +78,8 @@ def write_table(ws, csv_text, title_note):
 
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(header))}{len(body) + 1}"
-
-    note = ws.cell(row=len(body) + 3, column=1, value=title_note)
-    note.font = Font(name=FONT, size=9, italic=True, color="5A6270")
+    # Không viết ghi chú xuống dưới bảng: Google Sheets xuất CSV cả dòng đó,
+    # app sẽ đọc nhầm thành một dòng đơn hàng. Ghi chú nằm ở tab HUONG_DAN.
     return header, len(body) + 1
 
 
@@ -89,19 +88,11 @@ wb = Workbook()
 # ---------------- DON_NHAP ----------------
 ws_in = wb.active
 ws_in.title = "DON_NHAP"
-head_in, last_in = write_table(
-    ws_in,
-    data["inboundCsv"],
-    "Các dòng trên là đơn mẫu — xoá đi và nhập đơn của bạn. Ô nền vàng là bắt buộc, ô nền xám bỏ trống được.",
-)
+head_in, last_in = write_table(ws_in, data["inboundCsv"])
 
 # ---------------- DON_XUAT ----------------
 ws_out = wb.create_sheet("DON_XUAT")
-head_out, last_out = write_table(
-    ws_out,
-    data["outboundCsv"],
-    "Các dòng trên là phiếu soạn mẫu — xoá đi và nhập phiếu của bạn. Ô nền vàng là bắt buộc, ô nền xám bỏ trống được.",
-)
+head_out, last_out = write_table(ws_out, data["outboundCsv"])
 
 # ---------------- DANH_MUC ----------------
 ws_cat = wb.create_sheet("DANH_MUC")
@@ -164,6 +155,8 @@ intro = [
     "sau đó gửi link cho đội kỹ thuật để cấu hình. App đọc trực tiếp hai tab DON_NHAP và DON_XUAT.",
     "",
     "Quy ước màu: ô nền vàng là cột bắt buộc, ô nền xám là cột bỏ trống được.",
+    "Các dòng có sẵn trong hai tab DON_NHAP và DON_XUAT là đơn mẫu — xoá đi rồi nhập đơn của bạn.",
+    "Đừng gõ ghi chú xuống dưới bảng dữ liệu: app đọc cả vùng đó, dòng chữ lạc vào sẽ bị coi là một dòng đơn.",
     "Mỗi dòng là MỘT DÒNG HÀNG, không phải một đơn. Các dòng cùng mã đơn tự gộp thành một đơn.",
     "Dòng nào sai thì app bỏ qua dòng đó và báo rõ tab, số dòng, cột sai; các dòng còn lại vẫn tải bình thường.",
     "Sau khi sửa Sheet, bấm nút Tải lại ở màn hình Chọn kho trong app để lấy bản mới.",

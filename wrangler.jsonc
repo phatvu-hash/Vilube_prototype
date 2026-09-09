@@ -8,12 +8,10 @@
   "build": {
     "command": "npm run build"
   },
-  "vars": {
-    // Id của Google Sheet chứa hai tab DON_NHAP và DON_XUAT.
-    // Để trống thì Worker trả bộ dữ liệu mẫu trong code — app vẫn chạy được.
-    // Sheet cần chia sẻ ở mức "ai có link đều xem được".
-    "SHEET_ID": ""
-  },
+  // SHEET_ID là id Google Sheet chứa hai tab DON_NHAP và DON_XUAT. Đặt bằng
+  // `npx wrangler secret put SHEET_ID` chứ không để trong file này, vì repo
+  // đang public. Chưa đặt thì Worker trả bộ dữ liệu mẫu — app vẫn chạy đủ.
+  // Sheet cần chia sẻ ở mức "ai có link đều xem được".
   // App là SPA tĩnh (Vite build ra ./dist) — Worker chỉ phục vụ static assets.
   // single-page-application: mọi route (vd /m/nhap/asn-1) đều trả index.html
   // để react-router xử lý, tránh 404 khi mở link trực tiếp hoặc F5.

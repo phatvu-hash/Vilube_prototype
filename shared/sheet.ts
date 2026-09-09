@@ -134,6 +134,15 @@ function fail(ctx: Ctx, row: number, column: string, value: string, message: str
   return null
 }
 
+/**
+ * Dòng không mang chút định danh nào của đơn thì coi như dòng trắng và bỏ qua
+ * lặng lẽ — thường là dòng ghi chú người dùng gõ dưới bảng. Dòng có dữ liệu
+ * nhưng sai giá trị vẫn phải báo lỗi như thường.
+ */
+function isBlankRow(r: Record<string, string>, keys: string[]): boolean {
+  return keys.every((k) => !(r[k] ?? '').trim())
+}
+
 /** Kiểm tra phần dùng chung cho cả hai tab: kho và mã hàng */
 function readWarehouseAndItem(ctx: Ctx, r: Record<string, string>, rowNo: number) {
   const khoRaw = r.KHO ?? ''
@@ -205,6 +214,7 @@ function buildAsns(csv: string, errors: SheetError[]): { asns: Asn[]; putaways: 
 
   records.forEach((r, idx) => {
     const rowNo = idx + 2 // +1 bỏ tiêu đề, +1 vì Sheets đếm từ 1
+    if (isBlankRow(r, ['MA_DON', 'MA_HANG', 'SO_LUONG'])) return
     const head = readWarehouseAndItem(ctx, r, rowNo)
     if (!head) return
     const { whId, kho, item } = head
@@ -356,6 +366,7 @@ function buildPickOrders(csv: string, errors: SheetError[]): { orders: PickOrder
 
   records.forEach((r, idx) => {
     const rowNo = idx + 2
+    if (isBlankRow(r, ['MA_DON_HANG', 'MA_HANG', 'SO_LUONG'])) return
     const head = readWarehouseAndItem(ctx, r, rowNo)
     if (!head) return
     const { whId, kho, item } = head

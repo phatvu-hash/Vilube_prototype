@@ -166,6 +166,13 @@ describe('buildDataSet — báo lỗi từng dòng', () => {
     expect(firstError(ROW_BB.replace(/,$/, ',99999'))).toMatchObject({ column: 'DA_NHAN' })
   })
 
+  it('dòng ghi chú dưới bảng không bị coi là lỗi', () => {
+    const note = 'Các dòng trên là đơn mẫu — xoá đi và nhập đơn của bạn.'
+    const d = buildDataSet(inbound(ROW_BB, note), outbound())
+    expect(d.errors).toEqual([])
+    expect(d.asns).toHaveLength(1)
+  })
+
   it('dòng lỗi bị bỏ qua nhưng dòng đúng vẫn tải', () => {
     const d = buildDataSet(inbound(ROW_BB.replace('BB,', 'XX,'), ROW_BB), outbound())
     expect(d.errors).toHaveLength(1)
