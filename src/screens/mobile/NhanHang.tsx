@@ -111,7 +111,7 @@ export function NhanHang() {
     <>
       <MobileAppBar title="Nhận hàng" doc />
 
-      <ScreenScroll className="space-y-3 px-4 py-3">
+      <ScreenScroll className="space-y-2 px-4 py-3">
         <SelectField
           label="Loại đơn hàng nhập"
           required
@@ -121,15 +121,16 @@ export function NhanHang() {
           emphasis
         />
 
-        <InputField label="Postingdate" value={postingDate} onChange={setPostingDate} type="date" calendar />
-
-        <ScanField
-          label="Mã hàng"
-          value={itemCode}
-          onChange={onScanItem}
-          options={scanItemOptions}
-          sheetTitle="Quét mã hàng"
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="Postingdate" value={postingDate} onChange={setPostingDate} type="date" calendar />
+          <ScanField
+            label="Mã hàng"
+            value={itemCode}
+            onChange={onScanItem}
+            options={scanItemOptions}
+            sheetTitle="Quét mã hàng"
+          />
+        </div>
 
         <SelectField
           label="SKU - Tên hàng"
@@ -140,14 +141,15 @@ export function NhanHang() {
           emphasis
         />
 
-        <ScanField label="Pallet ID" required value={palletId} onChange={setPalletId} options={palletOptions} />
-
-        <SelectField
-          label="Số lô"
-          value={lot}
-          options={['2613030000', '2613030001', '2613030002'].map((x) => ({ value: x, label: x }))}
-          onChange={setLot}
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <ScanField label="Pallet ID" required value={palletId} onChange={setPalletId} options={palletOptions} />
+          <SelectField
+            label="Số lô"
+            value={lot}
+            options={['2613030000', '2613030001', '2613030002'].map((x) => ({ value: x, label: x }))}
+            onChange={setLot}
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <InputField label="Ngày sản xuất" value={mfg} onChange={onMfg} type="date" calendar />

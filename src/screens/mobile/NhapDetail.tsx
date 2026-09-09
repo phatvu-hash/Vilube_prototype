@@ -186,7 +186,7 @@ export function NhapDetail() {
     <>
       <MobileAppBar title="Chi tiết nhập hàng" onDoc={() => setDoc(true)} />
 
-      <ScreenScroll className="space-y-3 px-4 py-3">
+      <ScreenScroll className="space-y-2 px-4 py-3">
         <SegmentTabs
           tabs={TABS}
           active={tab}
@@ -196,7 +196,7 @@ export function NhapDetail() {
           }}
         />
 
-        <div className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-2 text-[12px] text-navy">
+        <div className="flex items-center justify-between rounded-lg bg-navy-50 px-3 py-1.5 text-[12px] text-navy">
           <span>
             Đơn <b>{asn.code}</b> · {asn.type}
           </span>
@@ -225,8 +225,6 @@ export function NhapDetail() {
           />
         )}
 
-        <InputField label="Mã hàng" value={item?.code ?? ''} onChange={() => {}} readOnly scan />
-
         {tab === 'nhan' ? (
           <InputField
             label="SKU - Tên hàng"
@@ -246,23 +244,26 @@ export function NhapDetail() {
           />
         )}
 
-        <SelectField
-          label="Số lô"
-          value={lot}
-          options={
-            lot
-              ? [{ value: lot, label: lot }]
-              : (asn.lines.filter((l) => l.lot).map((l) => ({ value: l.lot, label: l.lot })) ?? [])
-          }
-          onChange={setLot}
-        />
+        <div className="grid grid-cols-2 gap-2">
+          <InputField label="Mã hàng" value={item?.code ?? ''} onChange={() => {}} readOnly scan />
+          <SelectField
+            label="Số lô"
+            value={lot}
+            options={
+              lot
+                ? [{ value: lot, label: lot }]
+                : (asn.lines.filter((l) => l.lot).map((l) => ({ value: l.lot, label: l.lot })) ?? [])
+            }
+            onChange={setLot}
+          />
+        </div>
+
+        <InputField label="Số lô nội bộ" value={lotInternal} onChange={setLotInternal} />
 
         <div className="grid grid-cols-2 gap-2">
           <InputField label="Ngày sản xuất" value={mfg} onChange={onMfg} type="date" calendar />
           <InputField label="Hạn sử dụng" value={exp} onChange={setExp} type="date" calendar />
         </div>
-
-        <InputField label="Số lô nội bộ" value={lotInternal} onChange={setLotInternal} />
 
         <UomSegment
           qty={toUnit(remaining, curUnit, item)}

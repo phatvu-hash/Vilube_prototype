@@ -90,33 +90,34 @@ export function SoanDetail() {
         }}
       />
 
-      <ScreenScroll className="space-y-3 px-4 py-3">
+      <ScreenScroll className="space-y-2 px-4 py-3">
         {!line ? (
           <div className="py-16 text-center text-[15px] text-muted">Phiếu này đã soạn xong.</div>
         ) : (
           <>
-            <SelectField
-              label="Khu vực"
-              value={line.zone}
-              options={zones.map((z) => ({ value: z, label: z }))}
-              onChange={(z) => {
-                const first = pending.find((l) => l.zone === z)
-                if (first) selectLine(first.id)
-              }}
-            />
-
-            <SelectField
-              label="Vị trí"
-              value={line.id}
-              options={pending
-                .filter((l) => l.zone === line.zone)
-                .map((l) => ({
-                  value: l.id,
-                  label: locationById[l.locationId]?.code ?? '',
-                  sub: `${itemById[l.itemId]?.code} · còn ${fmt(l.qtyRequired - l.qtyPicked)}`,
-                }))}
-              onChange={selectLine}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <SelectField
+                label="Khu vực"
+                value={line.zone}
+                options={zones.map((z) => ({ value: z, label: z }))}
+                onChange={(z) => {
+                  const first = pending.find((l) => l.zone === z)
+                  if (first) selectLine(first.id)
+                }}
+              />
+              <SelectField
+                label="Vị trí"
+                value={line.id}
+                options={pending
+                  .filter((l) => l.zone === line.zone)
+                  .map((l) => ({
+                    value: l.id,
+                    label: locationById[l.locationId]?.code ?? '',
+                    sub: `${itemById[l.itemId]?.code} · còn ${fmt(l.qtyRequired - l.qtyPicked)}`,
+                  }))}
+                onChange={selectLine}
+              />
+            </div>
 
             <ScanField
               label="Pallet ID"
@@ -138,8 +139,11 @@ export function SoanDetail() {
               onChange={() => {}}
               readOnly
             />
-            <InputField label="Số lô NCC" value={line.lotNcc} onChange={() => {}} readOnly />
-            <InputField label="Số lô" value={line.lot} onChange={() => {}} readOnly />
+
+            <div className="grid grid-cols-2 gap-2">
+              <InputField label="Số lô NCC" value={line.lotNcc} onChange={() => {}} readOnly />
+              <InputField label="Số lô" value={line.lot} onChange={() => {}} readOnly />
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <InputField label="Ngày sản xuất" value={line.mfgDate} onChange={() => {}} readOnly type="date" calendar />

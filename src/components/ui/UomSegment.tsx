@@ -11,8 +11,8 @@ interface Props {
 /** Số lượng cỡ lớn + segmented đơn vị tính dọc (CÁI/THÙNG/PALLET · KG/DRUM/PALLET) */
 export function UomSegment({ qty, units, selected, onSelect }: Props) {
   return (
-    <div className="flex items-center gap-4 py-1">
-      <div className="min-w-[72px] flex-1 text-center text-[44px] font-bold leading-none tabular-nums text-navy">
+    <div className="flex items-center gap-4">
+      <div className="min-w-[72px] flex-1 text-center text-[40px] font-bold leading-none tabular-nums text-navy">
         {fmtQty(qty)}
       </div>
       <div className="w-[170px] overflow-hidden rounded-lg border-2 border-navy">
@@ -24,7 +24,7 @@ export function UomSegment({ qty, units, selected, onSelect }: Props) {
               type="button"
               onClick={() => onSelect(u)}
               className={cn(
-                'block w-full px-4 py-2 text-center text-[15px] font-bold tracking-wide transition',
+                'block w-full px-4 py-1.5 text-center text-[15px] font-bold tracking-wide transition',
                 i > 0 && 'border-t-2 border-navy/15',
                 active ? 'bg-navy text-white' : 'bg-white text-brand',
               )}

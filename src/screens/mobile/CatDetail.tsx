@@ -69,24 +69,26 @@ export function CatDetail() {
     <>
       <MobileAppBar title="Cất hàng" onDoc={() => setDoc(true)} />
 
-      <ScreenScroll className="space-y-3 px-4 py-3">
+      <ScreenScroll className="space-y-2 px-4 py-3">
         {pending.length === 0 ? (
           <div className="py-16 text-center text-[15px] text-muted">Công việc này đã cất xong.</div>
         ) : (
           <>
-            <ScanField
-              label="PalletID"
-              required
-              value={palletCode}
-              onChange={setPalletCode}
-              options={pending.map((p) => ({
-                value: p.palletId,
-                label: p.palletId,
-                sub: `${itemById[p.itemId]?.code} · ${fmt(p.qty)} ${unitsOf(itemById[p.itemId])[0]}`,
-              }))}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <ScanField
+                label="PalletID"
+                required
+                value={palletCode}
+                onChange={setPalletCode}
+                options={pending.map((p) => ({
+                  value: p.palletId,
+                  label: p.palletId,
+                  sub: `${itemById[p.itemId]?.code} · ${fmt(p.qty)} ${unitsOf(itemById[p.itemId])[0]}`,
+                }))}
+              />
+              <InputField label="Mã hàng" value={item?.code ?? ''} onChange={() => {}} readOnly scan />
+            </div>
 
-            <InputField label="Mã hàng" value={item?.code ?? ''} onChange={() => {}} readOnly scan />
             <InputField
               label="SKU - Tên hàng"
               value={item ? `${item.code} - ${item.name}` : ''}
@@ -102,8 +104,10 @@ export function CatDetail() {
               onSelect={setUnit}
             />
 
-            <InputField label="Số lô" value={pallet?.lot ?? ''} onChange={() => {}} readOnly />
-            <InputField label="Số lô nội bộ" value={pallet?.lotInternal ?? ''} onChange={() => {}} readOnly />
+            <div className="grid grid-cols-2 gap-2">
+              <InputField label="Số lô" value={pallet?.lot ?? ''} onChange={() => {}} readOnly />
+              <InputField label="Số lô nội bộ" value={pallet?.lotInternal ?? ''} onChange={() => {}} readOnly />
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <InputField label="Ngày sản xuất" value={pallet?.mfgDate ?? ''} onChange={() => {}} readOnly type="date" calendar />
@@ -111,13 +115,13 @@ export function CatDetail() {
             </div>
 
             {/* Vị trí đề xuất — bấm mũi tên kép để lấy vị trí khác (HDSD bước 9) */}
-            <div className="pt-1">
-              <div className="text-[14px] text-slate-500">Vị trí đề xuất</div>
+            <div>
+              <div className="text-[13px] text-slate-500">Vị trí đề xuất</div>
               <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setToLoc(suggested.code)}
-                  className="text-[46px] font-bold leading-tight tracking-tight text-navy"
+                  className="text-[40px] font-bold leading-tight tracking-tight text-navy"
                 >
                   {suggested.code}
                 </button>
@@ -125,12 +129,12 @@ export function CatDetail() {
                   type="button"
                   aria-label="Lấy vị trí khác"
                   onClick={() => setSuggestId(nextSuggestion(suggested.id))}
-                  className="grid size-11 place-items-center rounded-lg text-brand active:bg-navy-50"
+                  className="grid size-10 place-items-center rounded-lg text-brand active:bg-navy-50"
                 >
-                  <ChevronsRight className="size-8" strokeWidth={2.5} />
+                  <ChevronsRight className="size-7" strokeWidth={2.5} />
                 </button>
               </div>
-              <div className="text-[12px] text-muted">Khu vực {suggested.zone} · chạm vào mã để điền nhanh</div>
+              <div className="text-[11px] text-muted">Khu vực {suggested.zone} · chạm vào mã để điền nhanh</div>
             </div>
 
             <ScanField
