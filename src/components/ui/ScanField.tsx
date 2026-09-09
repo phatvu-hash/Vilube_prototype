@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ScanLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
+import { useT } from '@/i18n'
 
 export interface ScanOption {
   value: string
@@ -13,6 +14,12 @@ interface Props {
   label: string
   value: string
   onChange: (v: string) => void
+  /**
+   * Gọi khi "bắn xong" một mã: chọn mã trong danh sách mô phỏng, bấm Enter,
+   * hoặc rời khỏi ô. Máy quét thật cũng nạp trọn chuỗi rồi mới gửi Enter,
+   * nên phần kiểm tra mã đặt ở đây thay vì chạy theo từng ký tự gõ tay.
+   */
+  onCommit?: (v: string) => void
   /** Danh sách mã có thể "quét" — mô phỏng máy quét của handheld */
   options: ScanOption[]
   placeholder?: string
@@ -30,6 +37,7 @@ export function ScanField({
   label,
   value,
   onChange,
+  onCommit,
   options,
   placeholder = '---',
   required,
@@ -38,6 +46,14 @@ export function ScanField({
   emptyText = 'Không còn mã nào để quét',
 }: Props) {
   const [open, setOpen] = useState(false)
+  const t = useT()
+  // Enter rồi blur sẽ bắn 2 lần cùng một mã — chỉ xử lý lần đầu
+  const lastCommitted = useRef<string | null>(null)
+  const commit = (v: string) => {
+    if (lastCommitted.current === v) return
+    lastCommitted.current = v
+    onCommit?.(v)
+  }
   return (
     <>
       <div className="flex items-center gap-2 rounded-lg bg-field px-3.5 py-2">
@@ -49,7 +65,14 @@ export function ScanField({
           <input
             value={value}
             placeholder={placeholder}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => {
+              lastCommitted.current = null // gõ lại mã khác thì cho phép xử lý tiếp
+              onChange(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commit((e.target as HTMLInputElement).value)
+            }}
+            onBlur={(e) => commit(e.target.value)}
             className={cn(
               'block w-full bg-transparent text-[15px] font-medium placeholder:text-muted focus:outline-none',
               emphasis ? 'font-semibold text-brand' : 'text-ink',
@@ -59,7 +82,7 @@ export function ScanField({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Quét mã"
+          aria-label={t('Quét mã')}
           className="grid size-9 shrink-0 place-items-center rounded-lg text-navy active:bg-navy-100"
         >
           <ScanLine className="size-5" strokeWidth={1.75} />
@@ -68,11 +91,11 @@ export function ScanField({
 
       <BottomSheet
         open={open}
-        title={sheetTitle ?? (/^qu[ée]t/i.test(label) ? label : `Quét ${label.toLowerCase()}`)}
+        title={sheetTitle ?? (/^qu[ée]t|^scan/i.test(label) ? label : t('Quét {0}', label.toLowerCase()))}
         onClose={() => setOpen(false)}
       >
         <p className="px-3.5 pb-2 text-[12px] text-muted">
-          Mô phỏng máy quét — chạm vào mã bên dưới để "quét".
+          {t('Mô phỏng máy quét — chạm vào mã bên dưới để "quét".')}
         </p>
         {options.length === 0 && (
           <div className="px-4 py-10 text-center text-[15px] text-muted">{emptyText}</div>
@@ -83,6 +106,7 @@ export function ScanField({
             type="button"
             onClick={() => {
               onChange(o.value)
+              commit(o.value)
               setOpen(false)
             }}
             className="flex w-full items-center gap-3 rounded-lg px-3.5 py-3 text-left active:bg-slate-50"

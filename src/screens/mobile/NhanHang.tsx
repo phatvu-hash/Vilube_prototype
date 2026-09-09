@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '@/store'
-import { items, itemById } from '@/data/items'
+import { Check } from 'lucide-react'
+import { useApp, useWhKind } from '@/store'
+import { itemsOf, itemById } from '@/data/items'
 import { inboundTypes, mkLotInternal } from '@/data/mock'
 import { toast } from '@/lib/toast'
 import { addDays, fmt, todayIso } from '@/lib/utils'
 import { baseUnit, fmtQty, fromUnit, toUnit, unitsOf } from '@/lib/uom'
+import { useT } from '@/i18n'
 import { MobileAppBar } from '@/components/mobile/MobileAppBar'
 import { ScanField } from '@/components/ui/ScanField'
 import { InputField } from '@/components/ui/InputField'
@@ -13,12 +15,16 @@ import { SelectField } from '@/components/ui/SelectField'
 import { UomSegment } from '@/components/ui/UomSegment'
 import { Button } from '@/components/ui/Button'
 import { ScreenScroll, StickyFooter } from '@/components/mobile/parts'
+import { ConfirmModal } from '@/components/mobile/ConfirmModal'
 
 /** PHẦN 3 — Nhập hàng chủ động (Khác → Nhập hàng) */
 export function NhanHang() {
   const nav = useNavigate()
+  const t = useT()
+  const kind = useWhKind()
   const receiveDirect = useApp((s) => s.receiveDirect)
 
+  const isNvl = kind === 'NVL'
   const [orderType, setOrderType] = useState(inboundTypes[2])
   const [postingDate, setPostingDate] = useState(todayIso())
   const [itemCode, setItemCode] = useState('')
@@ -30,32 +36,35 @@ export function NhanHang() {
   const [lotInternal, setLotInternal] = useState('')
   const [unit, setUnit] = useState('')
   const [qtyStr, setQtyStr] = useState('')
+  const [received, setReceived] = useState(0) // số lần đã bấm NHẬN HÀNG trên màn này
+  const [askPrint, setAskPrint] = useState(false)
 
+  const catalog = useMemo(() => itemsOf(kind), [kind])
   const item = itemById[itemId]
-  const units = unitsOf(item)
+  const units = unitsOf(item, kind)
   const curUnit = unit || units[0]
 
   const itemOptions = useMemo(
-    () => items.map((x) => ({ value: x.id, label: `${x.code} - ${x.name}`, sub: x.packingCode })),
-    [],
+    () => catalog.map((x) => ({ value: x.id, label: `${x.code} - ${x.name}`, sub: x.packingCode })),
+    [catalog],
   )
   const scanItemOptions = useMemo(
-    () => items.slice(0, 12).map((x) => ({ value: x.code, label: x.code, sub: x.name })),
-    [],
+    () => catalog.map((x) => ({ value: x.code, label: x.code, sub: x.name })),
+    [catalog],
   )
   const palletOptions = useMemo(
     () =>
       Array.from({ length: 6 }, (_, i) => {
-        const code = `DR${String(i + 1).padStart(6, '0')}`
-        return { value: code, label: code, sub: 'Tem pallet' }
+        const code = isNvl ? `DRM${String(i + 1).padStart(6, '0')}` : `PLT${String(i + 1).padStart(6, '0')}`
+        return { value: code, label: code, sub: isNvl ? 'Tem phuy' : 'Tem pallet' }
       }),
-    [],
+    [isNvl],
   )
 
   /** Quét mã hàng → chọn luôn mặt hàng tương ứng */
   const onScanItem = (code: string) => {
     setItemCode(code)
-    const found = items.find((x) => x.code === code)
+    const found = catalog.find((x) => x.code === code)
     if (found) onPickItem(found.id)
   }
 
@@ -81,12 +90,24 @@ export function NhanHang() {
     setQtyStr(qtyStr ? fmtQty(toUnit(base, u, item)) : '')
   }
 
+  const resetLine = () => {
+    setItemCode('')
+    setItemId('')
+    setPalletId('')
+    setLot('')
+    setMfg('')
+    setExp('')
+    setLotInternal('')
+    setUnit('')
+    setQtyStr('')
+  }
+
   const submit = () => {
-    if (!item) return toast('Chọn mặt hàng ở ô SKU - Tên hàng')
-    if (!palletId.trim()) return toast('Quét mã PALLET ID')
-    if (!lot.trim()) return toast('Nhập hoặc chọn số lô')
+    if (!item) return toast(t('Chọn mặt hàng ở ô SKU - Tên hàng'))
+    if (!palletId.trim()) return toast(isNvl ? t('Quét mã DRUM ID') : t('Quét mã PALLET ID'))
+    if (!lot.trim()) return toast(t('Nhập hoặc chọn số lô'))
     const qty = fromUnit(Number(qtyStr) || 0, curUnit, item)
-    if (qty <= 0) return toast('Nhập số lượng xác nhận')
+    if (qty <= 0) return toast(t('Nhập số lượng xác nhận'))
 
     receiveDirect({
       orderType,
@@ -101,39 +122,62 @@ export function NhanHang() {
       unit: curUnit,
     })
 
-    toast(`Đã nhận ${fmt(qty)} ${baseUnit(item)} · pallet ${palletId} đã chuyển sang công việc Cất hàng`)
-    nav('/m', { replace: true })
+    toast(
+      isNvl
+        ? t('Đã nhận {0} {1} · phuy {2} đã chuyển sang công việc Cất hàng', fmt(qty), baseUnit(item), palletId)
+        : t('Đã nhận {0} {1} · pallet {2} đã chuyển sang công việc Cất hàng', fmt(qty), baseUnit(item), palletId),
+    )
+    setReceived((n) => n + 1)
+    resetLine()
+  }
+
+  /** Bấm nút tích góc phải trên — hoàn tất đơn, hỏi in barcode (HDSD bước 13–15) */
+  const finish = () => {
+    if (received === 0) return toast(t('Nhập số lượng xác nhận'))
+    setAskPrint(true)
   }
 
   const bigQty = Number(qtyStr) || 0
 
   return (
     <>
-      <MobileAppBar title="Nhận hàng" doc />
+      <MobileAppBar
+        title={t('Nhận hàng')}
+        right={
+          <button
+            type="button"
+            onClick={finish}
+            aria-label={t('Hoàn tất đơn')}
+            className="grid size-9 place-items-center rounded-full text-navy active:bg-navy-50"
+          >
+            <Check className="size-6" strokeWidth={2.4} />
+          </button>
+        }
+      />
 
       <ScreenScroll className="form-fill px-4 py-3">
         <SelectField
-          label="Loại đơn hàng nhập"
+          label={t('Loại đơn hàng nhập')}
           required
           value={orderType}
-          options={inboundTypes.map((t) => ({ value: t, label: t }))}
+          options={inboundTypes.map((x) => ({ value: x, label: t(x) }))}
           onChange={setOrderType}
           emphasis
         />
 
         <div className="grid grid-cols-2 gap-2">
-          <InputField label="Postingdate" value={postingDate} onChange={setPostingDate} type="date" calendar />
+          <InputField label={t('Postingdate')} value={postingDate} onChange={setPostingDate} type="date" calendar />
           <ScanField
-            label="Mã hàng"
+            label={t('Mã hàng')}
             value={itemCode}
             onChange={onScanItem}
             options={scanItemOptions}
-            sheetTitle="Quét mã hàng"
+            sheetTitle={t('Quét {0}', t('Mã hàng').toLowerCase())}
           />
         </div>
 
         <SelectField
-          label="SKU - Tên hàng"
+          label={t('SKU - Tên hàng')}
           required
           value={itemId}
           options={itemOptions}
@@ -142,26 +186,35 @@ export function NhanHang() {
         />
 
         <div className="grid grid-cols-2 gap-2">
-          <ScanField label="Pallet ID" required value={palletId} onChange={setPalletId} options={palletOptions} />
+          <ScanField
+            label={isNvl ? t('Drum ID') : t('Pallet ID')}
+            required
+            value={palletId}
+            onChange={setPalletId}
+            options={palletOptions.map((o) => ({ ...o, sub: t(o.sub) }))}
+          />
           <SelectField
-            label="Số lô"
+            label={t('Số lô')}
             value={lot}
-            options={['2613030000', '2613030001', '2613030002'].map((x) => ({ value: x, label: x }))}
+            options={(isNvl
+              ? ['2711050000', '2711050001', '2711050010']
+              : ['2613030000', '2613030001', '2613030002']
+            ).map((x) => ({ value: x, label: x }))}
             onChange={setLot}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <InputField label="Ngày sản xuất" value={mfg} onChange={onMfg} type="date" calendar />
-          <InputField label="Hạn sử dụng" value={exp} onChange={setExp} type="date" calendar />
+          <InputField label={t('Ngày sản xuất')} value={mfg} onChange={onMfg} type="date" calendar />
+          <InputField label={t('Hạn sử dụng')} value={exp} onChange={setExp} type="date" calendar />
         </div>
 
-        <InputField label="Số lô nội bộ" value={lotInternal} onChange={setLotInternal} />
+        <InputField label={t('Số lô nội bộ')} value={lotInternal} onChange={setLotInternal} />
 
         <UomSegment qty={bigQty} units={units} selected={curUnit} onSelect={onUnit} />
 
         <InputField
-          label={`Số lượng xác nhận (${curUnit})`}
+          label={t('Số lượng xác nhận ({0})', curUnit)}
           required
           value={qtyStr}
           onChange={setQtyStr}
@@ -172,9 +225,24 @@ export function NhanHang() {
 
       <StickyFooter>
         <Button block onClick={submit}>
-          NHẬN HÀNG
+          {t('NHẬN HÀNG')}
         </Button>
       </StickyFooter>
+
+      <ConfirmModal
+        open={askPrint}
+        message={t('Bạn có muốn in barcode không?')}
+        onYes={() => {
+          setAskPrint(false)
+          toast(t('Đã gửi lệnh in barcode'))
+          nav('/m', { replace: true })
+        }}
+        onNo={() => {
+          setAskPrint(false)
+          toast(t('Bỏ qua in barcode'))
+          nav('/m', { replace: true })
+        }}
+      />
     </>
   )
 }

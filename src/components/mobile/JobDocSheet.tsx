@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
+import { useT } from '@/i18n'
 
 export interface DocMeta {
   label: string
@@ -28,6 +29,7 @@ export function JobDocSheet({
   meta: DocMeta[]
   lines: DocLine[]
 }) {
+  const t = useT()
   return (
     <BottomSheet open={open} title={title} onClose={onClose}>
       <div className="mx-2 mb-3 rounded-lg bg-field px-3.5 py-2.5">
@@ -39,7 +41,7 @@ export function JobDocSheet({
         ))}
       </div>
       <div className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-label">
-        Danh sách dòng hàng
+        {t('Danh sách dòng hàng')}
       </div>
       {lines.map((l) => (
         <div

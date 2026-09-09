@@ -1,4 +1,5 @@
 import type { ItemMaster } from '@/data/items'
+import type { WarehouseKind } from '@/types'
 
 /**
  * Đơn vị tính theo nhóm quy cách (bám HDSD):
@@ -6,16 +7,17 @@ import type { ItemMaster } from '@/data/items'
  *  - Hàng phuy   (DRUM)   → KG  · DRUM  · PALLET
  *  - Pail / Jerrycan      → CÁI · PALLET
  */
-export function unitsOf(item?: ItemMaster): string[] {
-  if (!item) return ['CÁI', 'THÙNG', 'PALLET']
+export function unitsOf(item?: ItemMaster, wh: WarehouseKind = 'BB'): string[] {
+  // chưa chọn hàng thì lấy bộ đơn vị mặc định của kho đang thao tác
+  if (!item) return wh === 'NVL' ? ['KG', 'DRUM', 'PALLET'] : ['CÁI', 'THÙNG', 'PALLET']
   if (item.group === 'DRUM') return ['KG', 'DRUM', 'PALLET']
   if (item.group === 'PAIL' || item.group === 'JCAN') return ['CÁI', 'PALLET']
   return ['CÁI', 'THÙNG', 'PALLET']
 }
 
 /** Đơn vị cơ sở (đơn vị nhỏ nhất dùng để lưu số lượng) */
-export function baseUnit(item?: ItemMaster): string {
-  return unitsOf(item)[0]
+export function baseUnit(item?: ItemMaster, wh: WarehouseKind = 'BB'): string {
+  return unitsOf(item, wh)[0]
 }
 
 /** Số đơn vị cơ sở nằm trong 1 `unit` */

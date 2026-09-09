@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { ScanLine, Search, SlidersHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n'
 
 /** Vùng cuộn chính của 1 màn mobile */
 export function ScreenScroll({ children, className }: { children: ReactNode; className?: string }) {
@@ -30,6 +31,7 @@ export function SearchBar({
   onFilter?: () => void
   onScan?: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex items-center gap-2">
       <div className="flex flex-1 items-center gap-2 rounded-lg bg-field px-3 py-2.5">
@@ -37,10 +39,10 @@ export function SearchBar({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
+          placeholder={t(placeholder)}
           className="min-w-0 flex-1 bg-transparent text-[13px] font-medium uppercase tracking-wide text-ink placeholder:text-muted focus:outline-none"
         />
-        <button type="button" onClick={onScan} aria-label="Quét mã">
+        <button type="button" onClick={onScan} aria-label={t('Quét mã')}>
           <ScanLine className="size-5 text-navy" strokeWidth={1.75} />
         </button>
       </div>
@@ -48,7 +50,7 @@ export function SearchBar({
         <button
           type="button"
           onClick={onFilter}
-          aria-label="Bộ lọc tính năng"
+          aria-label={t('Bộ lọc tính năng')}
           className="grid size-11 shrink-0 place-items-center rounded-lg bg-field text-navy active:bg-navy-50"
         >
           <SlidersHorizontal className="size-5" strokeWidth={1.75} />
@@ -68,21 +70,22 @@ export function FilterTabs({
   active: string
   onChange: (t: string) => void
 }) {
+  const t = useT()
   return (
     <div className="flex items-center gap-5 border-b border-line">
-      {tabs.map((t) => {
-        const on = t === active
+      {tabs.map((tab) => {
+        const on = tab === active
         return (
           <button
-            key={t}
+            key={tab}
             type="button"
-            onClick={() => onChange(t)}
+            onClick={() => onChange(tab)}
             className={cn(
               'relative -mb-px py-2.5 text-[15px] transition',
               on ? 'font-semibold text-navy' : 'font-medium text-muted',
             )}
           >
-            {t}
+            {t(tab)}
             {on && <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-navy" />}
           </button>
         )

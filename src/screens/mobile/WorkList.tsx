@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp, type WorkFeature } from '@/store'
-import { partnerById } from '@/data/mock'
+import { useApp, useWhKind, type WorkFeature } from '@/store'
+import { partnerById, warehouseById } from '@/data/mock'
 import { itemById } from '@/data/items'
 import { fmtDate } from '@/lib/utils'
+import { useT } from '@/i18n'
 import { Button } from '@/components/ui/Button'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { FilterTabs, JobCard, Row, ScreenScroll, SearchBar } from '@/components/mobile/parts'
@@ -22,7 +23,10 @@ const norm = (s: string) => s.toLowerCase().trim()
 
 export function WorkList() {
   const nav = useNavigate()
+  const t = useT()
+  const kind = useWhKind()
   const user = useApp((s) => s.user)
+  const whId = useApp((s) => s.warehouseId)
   const asns = useApp((s) => s.asns)
   const putaways = useApp((s) => s.putaways)
   const pickOrders = useApp((s) => s.pickOrders)
@@ -45,10 +49,16 @@ export function WorkList() {
   const done = tabIdx === 2
   const kw = norm(q)
 
+  // Kho NVL quản lý theo phuy, kho Bao Bì theo pallet
+  const unitLabel = kind === 'NVL' ? 'Phuy chờ cất' : 'Pallet chờ cất'
+  const totalLabel = kind === 'NVL' ? 'Tổng phuy' : 'Tổng pallet'
+  const countLabel = kind === 'NVL' ? '{0} phuy' : '{0} pallet'
+
   // ---- Nhận hàng ----
   const asnList = useMemo(
     () =>
       asns.filter((a) => {
+        if (a.whId !== whId) return false
         const ok = done
           ? a.status === 'RECEIVED'
           : mine
@@ -58,29 +68,31 @@ export function WorkList() {
         if (!kw) return true
         return [a.code, a.pnk, partnerById[a.supplierId]?.name ?? ''].some((x) => norm(x).includes(kw))
       }),
-    [asns, done, mine, user.id, kw],
+    [asns, whId, done, mine, user.id, kw],
   )
 
   // ---- Cất hàng ----
   const putawayList = useMemo(
     () =>
-      putaways.filter((t) => {
+      putaways.filter((tk) => {
+        if (tk.whId !== whId) return false
         const ok = done
-          ? t.status === 'DONE'
+          ? tk.status === 'DONE'
           : mine
-            ? t.assignedTo === user.id && t.status !== 'DONE'
-            : !t.assignedTo && t.status !== 'DONE'
+            ? tk.assignedTo === user.id && tk.status !== 'DONE'
+            : !tk.assignedTo && tk.status !== 'DONE'
         if (!ok) return false
         if (!kw) return true
-        return [t.wmsCode, t.asnCode].some((x) => norm(x).includes(kw))
+        return [tk.wmsCode, tk.asnCode].some((x) => norm(x).includes(kw))
       }),
-    [putaways, done, mine, user.id, kw],
+    [putaways, whId, done, mine, user.id, kw],
   )
 
   // ---- Soạn hàng theo phiếu soạn tổng ----
   const pickList = useMemo(
     () =>
       pickOrders.filter((o) => {
+        if (o.whId !== whId) return false
         const ok = done
           ? o.status === 'PICKED'
           : mine
@@ -90,7 +102,7 @@ export function WorkList() {
         if (!kw) return true
         return [o.soNumber, o.code, partnerById[o.customerId]?.name ?? ''].some((x) => norm(x).includes(kw))
       }),
-    [pickOrders, done, mine, user.id, kw],
+    [pickOrders, whId, done, mine, user.id, kw],
   )
 
   const empty =
@@ -101,7 +113,14 @@ export function WorkList() {
   return (
     <>
       <header className="shrink-0 px-4 pb-2 pt-4">
-        <h1 className="text-[22px] font-semibold text-slate-600">Danh sách công việc</h1>
+        <h1 className="text-[22px] font-semibold text-slate-600">{t('Danh sách công việc')}</h1>
+        <button
+          type="button"
+          onClick={() => nav('/kho')}
+          className="mt-0.5 text-[12px] font-semibold text-brand underline-offset-2 active:underline"
+        >
+          {whId ? t(warehouseById[whId].name) : ''} · {t('Đổi kho')}
+        </button>
       </header>
 
       <div className="shrink-0 space-y-2 px-4 pb-1">
@@ -109,13 +128,13 @@ export function WorkList() {
           value={q}
           onChange={setQ}
           onFilter={() => setSheet(true)}
-          onScan={() => toast('Bật máy quét — quét mã đơn để lọc nhanh công việc')}
+          onScan={() => toast(t('Bật máy quét — quét mã đơn để lọc nhanh công việc'))}
         />
-        <FilterTabs tabs={TABS} active={TABS[tabIdx]} onChange={(t) => setTabIdx(TABS.indexOf(t))} />
+        <FilterTabs tabs={TABS} active={TABS[tabIdx]} onChange={(x) => setTabIdx(TABS.indexOf(x))} />
       </div>
 
       <ScreenScroll className="space-y-3 px-4 py-3">
-        {empty && <div className="py-20 text-center text-[16px] text-muted">Danh sách trống</div>}
+        {empty && <div className="py-20 text-center text-[16px] text-muted">{t('Danh sách trống')}</div>}
 
         {/* ---------------- NHẬN HÀNG ---------------- */}
         {feature === 'nhan' &&
@@ -125,28 +144,28 @@ export function WorkList() {
             return (
               <JobCard
                 key={a.id}
-                title="NHẬP HÀNG"
+                title={t('NHẬP HÀNG')}
                 badge={
                   a.status === 'RECEIVED' ? (
-                    <StatusBadge tone="done" label="Đã nhận" />
+                    <StatusBadge tone="done" label={t('Đã nhận')} />
                   ) : a.status === 'PARTIAL' ? (
-                    <StatusBadge tone="progress" label="Nhận một phần" />
+                    <StatusBadge tone="progress" label={t('Nhận một phần')} />
                   ) : (
-                    <StatusBadge tone="new" label="Mới" />
+                    <StatusBadge tone="new" label={t('Mới')} />
                   )
                 }
               >
                 <Row
-                  label="Nhà cung cấp"
+                  label={t('Nhà cung cấp')}
                   value={partnerById[a.supplierId]?.name}
-                  rLabel="Ngày giao hàng"
+                  rLabel={t('Ngày giao hàng')}
                   rValue={fmtDate(a.deliveryDate)}
                 />
-                <Row label="Mã đơn" value={a.code} rLabel="Số đơn nhập" rValue={a.pnk} />
-                <Row label="Loại đơn nhập" value={a.type} rLabel="Ghi chú" rValue={a.note} />
+                <Row label={t('Mã đơn')} value={a.code} rLabel={t('Số đơn nhập')} rValue={a.pnk} />
+                <Row label={t('Loại đơn nhập')} value={t(a.type)} rLabel={t('Ghi chú')} rValue={a.note} />
                 {a.status === 'PARTIAL' && (
                   <div className="pt-1 text-[12px] text-label">
-                    Đã nhận {Math.round((got / total) * 100)}% khối lượng đơn
+                    {t('Đã nhận {0}% khối lượng đơn', Math.round((got / total) * 100))}
                   </div>
                 )}
                 <Button
@@ -157,7 +176,11 @@ export function WorkList() {
                     nav(`/m/nhap/${a.id}`)
                   }}
                 >
-                  {a.status === 'RECEIVED' ? 'Xem lại' : a.status === 'PARTIAL' ? 'Tiếp tục' : 'Chấp nhận'}
+                  {a.status === 'RECEIVED'
+                    ? t('Xem lại')
+                    : a.status === 'PARTIAL'
+                      ? t('Tiếp tục')
+                      : t('Chấp nhận')}
                 </Button>
               </JobCard>
             )
@@ -165,39 +188,48 @@ export function WorkList() {
 
         {/* ---------------- CẤT HÀNG ---------------- */}
         {feature === 'cat' &&
-          putawayList.map((t) => {
-            const pending = t.pallets.filter((p) => !p.toLocationId).length
+          putawayList.map((tk) => {
+            const pending = tk.pallets.filter((p) => !p.toLocationId).length
             return (
               <JobCard
-                key={t.id}
-                title="CẤT HÀNG"
+                key={tk.id}
+                title={t('CẤT HÀNG')}
                 badge={
-                  t.status === 'DONE' ? (
-                    <StatusBadge tone="done" label="Hoàn thành" />
-                  ) : t.status === 'IN_PROGRESS' ? (
-                    <StatusBadge tone="progress" label="Đang cất" />
+                  tk.status === 'DONE' ? (
+                    <StatusBadge tone="done" label={t('Hoàn thành')} />
+                  ) : tk.status === 'IN_PROGRESS' ? (
+                    <StatusBadge tone="progress" label={t('Đang cất')} />
                   ) : (
-                    <StatusBadge tone="new" label="Mới" />
+                    <StatusBadge tone="new" label={t('Mới')} />
                   )
                 }
               >
                 <Row
-                  label="Mã WMS"
-                  value={t.wmsCode}
-                  rLabel="Ngày nhập hàng"
-                  rValue={fmtDate(t.receivedDate)}
+                  label={t('Mã WMS')}
+                  value={tk.wmsCode}
+                  rLabel={t('Ngày nhập hàng')}
+                  rValue={fmtDate(tk.receivedDate)}
                 />
-                <Row label="Mã đơn" value={t.asnCode} rLabel="Loại đơn" rValue={t.type} />
-                <Row label="Pallet chờ cất" value={`${pending} pallet`} rLabel="Tổng pallet" rValue={t.pallets.length} />
+                <Row label={t('Mã đơn')} value={tk.asnCode} rLabel={t('Loại đơn')} rValue={t(tk.type)} />
+                <Row
+                  label={t(unitLabel)}
+                  value={t(countLabel, pending)}
+                  rLabel={t(totalLabel)}
+                  rValue={tk.pallets.length}
+                />
                 <Button
                   block
                   className="mt-3"
                   onClick={() => {
-                    claim('putaway', t.id)
-                    nav(`/m/cat/${t.id}`)
+                    claim('putaway', tk.id)
+                    nav(`/m/cat/${tk.id}`)
                   }}
                 >
-                  {t.status === 'DONE' ? 'Xem lại' : t.status === 'IN_PROGRESS' ? 'Tiếp tục' : 'Chấp nhận'}
+                  {tk.status === 'DONE'
+                    ? t('Xem lại')
+                    : tk.status === 'IN_PROGRESS'
+                      ? t('Tiếp tục')
+                      : t('Chấp nhận')}
                 </Button>
               </JobCard>
             )
@@ -210,33 +242,33 @@ export function WorkList() {
             return (
               <JobCard
                 key={o.id}
-                title="ĐƠN HÀNG BÁN"
+                title={t('ĐƠN HÀNG BÁN')}
                 badge={
                   o.status === 'PICKED' ? (
-                    <StatusBadge tone="done" label="Hoàn thành" />
+                    <StatusBadge tone="done" label={t('Hoàn thành')} />
                   ) : o.status === 'PICKING' ? (
-                    <StatusBadge tone="progress" label="Đang soạn" />
+                    <StatusBadge tone="progress" label={t('Đang soạn')} />
                   ) : (
-                    <StatusBadge tone="new" label="Mới" />
+                    <StatusBadge tone="new" label={t('Mới')} />
                   )
                 }
               >
                 <Row
-                  label="Số đơn hàng"
+                  label={t('Số đơn hàng')}
                   value={o.soNumber}
-                  rLabel="Ngày giao hàng"
+                  rLabel={t('Ngày giao hàng')}
                   rValue={fmtDate(o.deliveryDate)}
                 />
                 <Row
-                  label="Khách hàng"
+                  label={t('Khách hàng')}
                   value={partnerById[o.customerId]?.name}
-                  rLabel="Mã đơn hàng"
+                  rLabel={t('Mã đơn hàng')}
                   rValue={o.code}
                 />
                 <Row
-                  label="Số dòng hàng"
-                  value={`${o.lines.length} dòng`}
-                  rLabel="Mặt hàng đầu"
+                  label={t('Số dòng hàng')}
+                  value={t('{0} dòng', o.lines.length)}
+                  rLabel={t('Mặt hàng đầu')}
                   rValue={first ? itemById[first.itemId]?.code : '—'}
                 />
                 <Button
@@ -247,7 +279,11 @@ export function WorkList() {
                     nav(`/m/soan/${o.id}`)
                   }}
                 >
-                  {o.status === 'PICKED' ? 'Xem lại' : o.status === 'PICKING' ? 'Tiếp tục' : 'Chấp nhận'}
+                  {o.status === 'PICKED'
+                    ? t('Xem lại')
+                    : o.status === 'PICKING'
+                      ? t('Tiếp tục')
+                      : t('Chấp nhận')}
                 </Button>
               </JobCard>
             )

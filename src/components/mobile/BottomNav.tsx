@@ -1,6 +1,7 @@
 import { ClipboardList, LayoutGrid, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n'
 
 const items = [
   { key: 'work', label: 'Công việc', icon: ClipboardList, to: '/m' },
@@ -10,6 +11,7 @@ const items = [
 
 export function BottomNav() {
   const nav = useNavigate()
+  const t = useT()
   const { pathname } = useLocation()
   const workPrefixes = ['/m/nhap', '/m/cat', '/m/soan']
   const otherPrefixes = ['/m/khac', '/m/nhan-hang', '/m/tonkho', '/m/dichuyen']
@@ -33,7 +35,7 @@ export function BottomNav() {
             )}
           >
             <Icon className="size-[22px]" strokeWidth={on ? 2.2 : 1.8} />
-            {label}
+            {t(label)}
           </button>
         )
       })}

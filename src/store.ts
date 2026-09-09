@@ -6,15 +6,18 @@ import type {
   PickOrder,
   PutawayTask,
   Role,
+  WarehouseKind,
 } from '@/types'
 import {
+  WH_BB,
   asns as seedAsns,
   demoUsers,
   inventory as seedInventory,
+  kindOf,
   mkLotInternal,
   pickOrders as seedPickOrders,
   putaways as seedPutaways,
-  storageLocations,
+  storageLocationsOf,
 } from '@/data/mock'
 
 export interface SessionUser {
@@ -22,14 +25,13 @@ export interface SessionUser {
   name: string
   code: string
   role: Role
-  warehouseId: string
 }
 
 export type WorkFeature = 'nhan' | 'cat' | 'soan'
 
-/** Dữ liệu 1 lần nhận hàng (dùng chung cho Thẻ nhãn / Thẻ khác nhãn) */
+/** Dữ liệu 1 lần nhận hàng (dùng chung cho Thẻ nhãn / Thẻ khác nhãn / phuy NVL) */
 export interface ReceivePayload {
-  cartonCode?: string
+  packageCode?: string
   palletId: string
   itemId: string
   qty: number // đơn vị cơ sở
@@ -42,6 +44,8 @@ export interface ReceivePayload {
 
 interface AppState {
   user: SessionUser
+  /** Kho đang thao tác — null nghĩa là chưa qua màn hình Chọn kho */
+  warehouseId: string | null
   asns: Asn[]
   putaways: PutawayTask[]
   pickOrders: PickOrder[]
@@ -49,14 +53,15 @@ interface AppState {
   receipts: DirectReceipt[]
   workFeature: WorkFeature
 
+  setWarehouse: (id: string) => void
   setWorkFeature: (f: WorkFeature) => void
   claim: (kind: 'asn' | 'putaway' | 'pick', id: string) => void
 
-  /** Nhận hàng: ghi nhận 1 thùng carton / 1 pallet vào đơn nhập */
+  /** Nhận hàng: ghi nhận 1 thùng carton / 1 pallet / 1 phuy vào đơn nhập */
   receive: (asnId: string, lineId: string, data: ReceivePayload) => void
   /** Nhập hàng chủ động (Khác → Nhập hàng) */
-  receiveDirect: (data: Omit<DirectReceipt, 'id'>) => void
-  /** Cất hàng: xác nhận đưa pallet vào vị trí → cộng tồn */
+  receiveDirect: (data: Omit<DirectReceipt, 'id' | 'whId'>) => void
+  /** Cất hàng: xác nhận đưa pallet/phuy vào vị trí → cộng tồn */
   putaway: (taskId: string, palletId: string, locationId: string) => void
   /** Soạn hàng: xác nhận số lượng đã soạn cho 1 dòng → trừ tồn */
   pick: (orderId: string, lineId: string, qty: number) => void
@@ -67,25 +72,21 @@ interface AppState {
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x))
 
 const u = demoUsers[0]
-const sessionUser: SessionUser = {
-  id: u.id,
-  name: u.name,
-  code: u.code,
-  role: u.role,
-  warehouseId: u.warehouseId,
-}
+const sessionUser: SessionUser = { id: u.id, name: u.name, code: u.code, role: u.role }
 
 let seq = 100
 const nextId = (p: string) => `${p}-${++seq}`
 
-/** Vị trí đề xuất kế tiếp — xoay vòng qua các vị trí lưu trữ (nút mũi tên kép) */
-export function nextSuggestion(currentLocationId: string): string {
-  const idx = storageLocations.findIndex((l) => l.id === currentLocationId)
-  return storageLocations[(idx + 1) % storageLocations.length].id
+/** Vị trí đề xuất kế tiếp — xoay vòng qua các vị trí lưu trữ của kho (nút mũi tên kép) */
+export function nextSuggestion(whId: string, currentLocationId: string): string {
+  const list = storageLocationsOf(whId)
+  const idx = list.findIndex((l) => l.id === currentLocationId)
+  return list[(idx + 1) % list.length].id
 }
 
 export const useApp = create<AppState>((set) => ({
   user: sessionUser,
+  warehouseId: null,
   asns: clone(seedAsns),
   putaways: clone(seedPutaways),
   pickOrders: clone(seedPickOrders),
@@ -93,6 +94,7 @@ export const useApp = create<AppState>((set) => ({
   receipts: [],
   workFeature: 'nhan',
 
+  setWarehouse: (warehouseId) => set({ warehouseId, workFeature: 'nhan' }),
   setWorkFeature: (workFeature) => set({ workFeature }),
 
   claim: (kind, id) =>
@@ -112,6 +114,8 @@ export const useApp = create<AppState>((set) => ({
     set((s) => {
       const asn = s.asns.find((a) => a.id === asnId)
       if (!asn) return {}
+      const whId = asn.whId
+      const locs = storageLocationsOf(whId)
 
       const asns = s.asns.map((a) => {
         if (a.id !== asnId) return a
@@ -125,7 +129,7 @@ export const useApp = create<AppState>((set) => ({
             lotInternal: data.lotInternal || l.lotInternal,
             mfgDate: data.mfgDate || l.mfgDate,
             expDate: data.expDate || l.expDate,
-            cartons: l.cartons.map((c) => (c.code === data.cartonCode ? { ...c, received: true } : c)),
+            packages: l.packages.map((c) => (c.code === data.packageCode ? { ...c, received: true } : c)),
           }
         })
         const all = lines.every((l) => l.qtyReceived >= l.qtyExpected)
@@ -135,10 +139,11 @@ export const useApp = create<AppState>((set) => ({
 
       // Tạo / bổ sung công việc cất hàng cho đơn nhập này
       const putaways = [...s.putaways]
-      let task = putaways.find((t) => t.asnCode === asn.code)
+      let task = putaways.find((t) => t.asnCode === asn.code && t.whId === whId)
       if (!task) {
         task = {
           id: nextId('pa'),
+          whId,
           wmsCode: `WMS${asn.code.slice(-8)}`,
           asnCode: asn.code,
           receivedDate: new Date().toISOString().slice(0, 10),
@@ -162,7 +167,7 @@ export const useApp = create<AppState>((set) => ({
           lotInternal: data.lotInternal,
           mfgDate: data.mfgDate,
           expDate: data.expDate,
-          suggestedLocationId: storageLocations[task.pallets.length % storageLocations.length].id,
+          suggestedLocationId: locs[task.pallets.length % locs.length].id,
         })
       }
 
@@ -171,13 +176,16 @@ export const useApp = create<AppState>((set) => ({
 
   receiveDirect: (data) =>
     set((s) => {
-      const receipt: DirectReceipt = { ...data, id: nextId('rc') }
+      const whId = s.warehouseId ?? WH_BB
+      const locs = storageLocationsOf(whId)
+      const receipt: DirectReceipt = { ...data, whId, id: nextId('rc') }
       const putaways = [...s.putaways]
       const code = 'CHUDONG'
-      let task = putaways.find((t) => t.asnCode === code && t.status !== 'DONE')
+      let task = putaways.find((t) => t.asnCode === code && t.whId === whId && t.status !== 'DONE')
       if (!task) {
         task = {
           id: nextId('pa'),
+          whId,
           wmsCode: `WMS${String(Date.now()).slice(-8)}`,
           asnCode: code,
           receivedDate: data.postingDate,
@@ -197,7 +205,7 @@ export const useApp = create<AppState>((set) => ({
         lotInternal: data.lotInternal,
         mfgDate: data.mfgDate,
         expDate: data.expDate,
-        suggestedLocationId: storageLocations[task.pallets.length % storageLocations.length].id,
+        suggestedLocationId: locs[task.pallets.length % locs.length].id,
       })
       return { receipts: [receipt, ...s.receipts], putaways }
     }),
@@ -224,6 +232,7 @@ export const useApp = create<AppState>((set) => ({
       } else {
         inventory.push({
           id: nextId('inv'),
+          whId: task.whId,
           itemId: pallet.itemId,
           locationId,
           palletId: pallet.palletId,
@@ -273,3 +282,11 @@ export const useApp = create<AppState>((set) => ({
       receipts: [],
     }),
 }))
+
+/** Loại kho đang thao tác — BB (bao bì) hoặc NVL (nguyên vật liệu) */
+export function useWhKind(): WarehouseKind {
+  return kindOf(useApp((s) => s.warehouseId) ?? WH_BB)
+}
+
+/** Id kho đang thao tác, mặc định về kho Bao Bì nếu chưa chọn */
+export const currentWhId = () => useApp.getState().warehouseId ?? WH_BB

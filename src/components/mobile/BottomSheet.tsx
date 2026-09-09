@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n'
 
 /** Bottom-sheet dùng chung cho dropdown & mô phỏng quét mã */
 export function BottomSheet({
@@ -14,6 +15,7 @@ export function BottomSheet({
   onClose: () => void
   children: ReactNode
 }) {
+  const t = useT()
   return (
     <div className={cn('absolute inset-0 z-50', open ? '' : 'pointer-events-none')}>
       <div
@@ -35,7 +37,7 @@ export function BottomSheet({
             type="button"
             onClick={onClose}
             className="grid size-9 place-items-center rounded-full text-slate-500 active:bg-slate-100"
-            aria-label="Đóng"
+            aria-label={t('Đóng')}
           >
             <X className="size-5" strokeWidth={2} />
           </button>

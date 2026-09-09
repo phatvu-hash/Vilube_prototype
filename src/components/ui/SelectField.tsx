@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
+import { useT } from '@/i18n'
 
 export interface Option {
   value: string
@@ -32,6 +33,7 @@ export function SelectField({
   disabled,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const t = useT()
   const current = options.find((o) => o.value === value)
 
   return (
@@ -61,7 +63,7 @@ export function SelectField({
 
       <BottomSheet open={open} title={label} onClose={() => setOpen(false)}>
         {options.length === 0 && (
-          <div className="px-4 py-10 text-center text-[15px] text-muted">Không có dữ liệu</div>
+          <div className="px-4 py-10 text-center text-[15px] text-muted">{t('Không có dữ liệu')}</div>
         )}
         {options.map((o) => {
           const active = o.value === value

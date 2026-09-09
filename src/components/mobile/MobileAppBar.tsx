@@ -2,6 +2,7 @@ import { ArrowLeft, FileText, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { useT } from '@/i18n'
 
 interface Props {
   title: string
@@ -17,6 +18,7 @@ interface Props {
 
 export function MobileAppBar({ title, back = true, onBack, right, onDoc, doc = true, onRefresh }: Props) {
   const nav = useNavigate()
+  const t = useT()
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-white px-3">
       {back && (
@@ -24,7 +26,7 @@ export function MobileAppBar({ title, back = true, onBack, right, onDoc, doc = t
           type="button"
           onClick={() => (onBack ? onBack() : nav(-1))}
           className="-ml-1 grid size-9 place-items-center rounded-full text-navy active:bg-navy-50"
-          aria-label="Quay lại"
+          aria-label={t('Quay lại')}
         >
           <ArrowLeft className="size-6" strokeWidth={2} />
         </button>
@@ -35,7 +37,7 @@ export function MobileAppBar({ title, back = true, onBack, right, onDoc, doc = t
         <button
           type="button"
           onClick={onRefresh}
-          aria-label="Làm mới"
+          aria-label={t('Làm mới')}
           className="grid size-9 place-items-center rounded-full text-navy active:bg-navy-50"
         >
           <RefreshCw className="size-[22px]" strokeWidth={2} />
@@ -45,7 +47,7 @@ export function MobileAppBar({ title, back = true, onBack, right, onDoc, doc = t
         <button
           type="button"
           onClick={onDoc}
-          aria-label="Chi tiết công việc"
+          aria-label={t('Chi tiết công việc')}
           className="grid size-9 place-items-center rounded-full text-navy active:bg-navy-50 disabled:opacity-100"
           disabled={!onDoc}
         >

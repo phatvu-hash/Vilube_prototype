@@ -1,6 +1,7 @@
 import { Calendar, ScanLine } from 'lucide-react'
 import type { HTMLInputTypeAttribute } from 'react'
 import { cn, fmtDateSlash } from '@/lib/utils'
+import { useT } from '@/i18n'
 
 interface Props {
   label: string
@@ -32,6 +33,7 @@ export function InputField({
   type = 'text',
   className,
 }: Props) {
+  const t = useT()
   return (
     <label className={cn('relative flex items-center gap-2 rounded-lg bg-field px-3.5 py-2', className)}>
       <span className="min-w-0 flex-1">
@@ -60,7 +62,7 @@ export function InputField({
         )}
       </span>
       {scan && (
-        <button type="button" onClick={onScan} aria-label="Quét mã" className="shrink-0">
+        <button type="button" onClick={onScan} aria-label={t('Quét mã')} className="shrink-0">
           <ScanLine className="size-5 text-navy" strokeWidth={1.75} />
         </button>
       )}

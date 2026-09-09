@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { useT } from '@/i18n'
 
 export interface FeatureOption {
   key: string
@@ -31,6 +32,7 @@ function Radio({ active }: { active: boolean }) {
 
 /** Bộ lọc "Tính năng" — panel trượt từ phải, theo HDSD bước 2 */
 export function FeatureSheet({ open, value, options, onChange, onClose, title = 'Tính năng' }: Props) {
+  const t = useT()
   return (
     <div className={cn('absolute inset-0 z-50', open ? '' : 'pointer-events-none')}>
       <div
@@ -47,12 +49,12 @@ export function FeatureSheet({ open, value, options, onChange, onClose, title = 
         )}
       >
         <div className="flex items-center justify-between px-5 py-4">
-          <h2 className="text-[17px] font-semibold text-slate-700">{title}</h2>
+          <h2 className="text-[17px] font-semibold text-slate-700">{t(title)}</h2>
           <button
             type="button"
             onClick={onClose}
             className="grid size-9 place-items-center rounded-full text-slate-500 active:bg-slate-100"
-            aria-label="Đóng"
+            aria-label={t('Đóng')}
           >
             <X className="size-6" strokeWidth={2} />
           </button>
@@ -69,13 +71,13 @@ export function FeatureSheet({ open, value, options, onChange, onClose, title = 
               className="flex w-full items-center gap-3 border-b border-line/60 py-3 text-left last:border-0"
             >
               <Radio active={o.key === value} />
-              <span className="text-[13px] font-bold uppercase tracking-wide text-brand">{o.label}</span>
+              <span className="text-[13px] font-bold uppercase tracking-wide text-brand">{t(o.label)}</span>
             </button>
           ))}
         </div>
         <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button block onClick={onClose}>
-            Đóng
+            {t('Đóng')}
           </Button>
         </div>
       </div>
