@@ -8,6 +8,10 @@ Prototype mobile app WMS cho **Kho Bao Bì Vilube**, dựng theo:
 - Dữ liệu: `Masterdata-HangHoa-Vilube.xlsx` (ITEM_MASTER + PACKING_STANDARDS)
 - Giao diện / UX: đồng bộ prototype **WMS Hương Thủy** (cùng design system Smartlog WMS)
 
+## Link demo
+
+https://vilube-prototype.phat-vu.workers.dev
+
 ## Chạy thử
 
 ```bash
@@ -95,3 +99,19 @@ docs/screenshots/      ảnh chụp các màn đã dựng
 ```
 
 Ảnh màn hình các bước xem trong `docs/screenshots/`.
+
+## Deploy
+
+App chạy trên **Cloudflare Workers** dưới dạng SPA tĩnh (`wrangler.jsonc`).
+
+```bash
+npx wrangler login   # lần đầu
+npm run deploy       # wrangler tự chạy Vite build rồi deploy
+```
+
+Đẩy code lên nhánh `main` của `phatvu-hash/Vilube_prototype` thì Cloudflare Workers Builds
+tự build và deploy. Lệnh build nằm trong `wrangler.jsonc` (`build.command`) chứ không đặt ở
+dashboard, nên CI chạy được với cấu hình mặc định (ô *Build command* để `None` vẫn đúng).
+
+`assets.not_found_handling = "single-page-application"` để mở thẳng link sâu
+(vd `/m/nhap/asn-1`) hoặc F5 không bị 404.
