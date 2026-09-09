@@ -7,7 +7,6 @@ import { warehouses } from '@shared/catalog'
 import { toast } from '@/lib/toast'
 import { Button } from '@/components/ui/Button'
 import { ScreenScroll } from '@/components/mobile/parts'
-import { DataStatus } from '@/components/mobile/DataStatus'
 import { cn } from '@/lib/utils'
 
 const ICON = { BB: Boxes, NVL: Droplets } as const
@@ -82,8 +81,6 @@ export function ChonKho() {
             {t('Thủ kho')} · {user.code}
           </div>
         </div>
-
-        <DataStatus />
 
         {warehouses.map((w) => {
           const Icon = ICON[w.kind]

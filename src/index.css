@@ -114,8 +114,10 @@ input[type='date']::-webkit-date-and-time-value {
   background: #fff;
 }
 
-/* Thanh trạng thái giả lập của máy — chỉ hiện ở chế độ xem trên desktop */
-.hh-statusbar {
+/* Đồng hồ và biểu tượng sóng là phần giả lập của khung máy — điện thoại thật
+   đã có thanh trạng thái riêng nên chỉ hiện khi xem trên desktop. Thanh chứa
+   chúng thì luôn hiện vì còn mang chip dữ liệu đơn hàng của app. */
+.hh-fake {
   display: none;
 }
 
@@ -147,7 +149,7 @@ input[type='date']::-webkit-date-and-time-value {
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6) inset;
   }
 
-  .hh-statusbar {
+  .hh-fake {
     display: flex;
   }
 }

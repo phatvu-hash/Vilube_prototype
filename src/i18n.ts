@@ -242,8 +242,18 @@ const EN: Record<string, string> = {
 
   // ---------- Nguồn dữ liệu ----------
   'Đang tải dữ liệu đơn hàng…': 'Loading order data…',
-  'Đã tải {0} đơn nhập · {1} đơn xuất · lúc {2}': 'Loaded {0} inbound · {1} outbound · at {2}',
-  'Đang dùng dữ liệu mẫu offline': 'Using offline sample data',
+  'Đang tải…': 'Loading…',
+  'Dữ liệu đơn hàng': 'Order data',
+  'Dữ liệu mẫu': 'Sample data',
+  'Dữ liệu mẫu trong app': 'Built-in sample data',
+  'Google Sheet': 'Google Sheet',
+  'Nguồn': 'Source',
+  'Cập nhật lúc': 'Updated at',
+  'Đơn nhập': 'Inbound orders',
+  'Đơn xuất': 'Outbound orders',
+  '{0} nhập · {1} xuất': '{0} in · {1} out',
+  'Tải lại lấy bản mới nhất từ bảng tính và bỏ thao tác đang làm dở.':
+    'Reloading fetches the latest data from the spreadsheet and discards work in progress.',
   'Tải lại': 'Reload',
   'Bỏ qua {0} dòng do lỗi': '{0} rows skipped because of errors',
   'Xem chi tiết': 'View details',
