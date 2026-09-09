@@ -37,6 +37,8 @@ export function CameraScanner({
   const videoRef = useRef<HTMLVideoElement>(null)
   const [phase, setPhase] = useState<Phase>('starting')
   const [error, setError] = useState('')
+  // Tỉ lệ khung hình camera trả về, để vẽ khung ngắm trùng khít vùng được giải mã
+  const [ratio, setRatio] = useState(16 / 9)
 
   useEffect(() => {
     if (!open) return
@@ -55,7 +57,12 @@ export function CameraScanner({
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
         setPhase('starting')
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+          // Xin độ phân giải cao: tem Code 128 dày, càng nhiều điểm ảnh càng dễ đọc
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
           audio: false,
         })
         if (stopped) return stop()
@@ -63,6 +70,9 @@ export function CameraScanner({
         const video = videoRef.current
         if (!video) return stop()
         video.srcObject = stream
+        video.onloadedmetadata = () => {
+          if (video.videoWidth) setRatio(video.videoWidth / video.videoHeight)
+        }
         await video.play()
         if (stopped) return stop()
         setPhase('scanning')
@@ -121,13 +131,20 @@ export function CameraScanner({
           playsInline
           muted
           autoPlay
-          className="size-full object-cover"
+          className="size-full object-contain"
           style={{ display: phase === 'error' ? 'none' : undefined }}
         />
 
+        {/* Hộp này trùng khít phần ảnh thật sau khi object-contain thu vừa khung,
+            nên dải sáng bên trong đúng bằng vùng máy đang đọc. */}
         {phase === 'scanning' && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="h-[34%] w-[90%] rounded-lg border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,.45)]" />
+            <div
+              className="grid max-h-full max-w-full place-items-center"
+              style={{ aspectRatio: String(ratio), width: '100%' }}
+            >
+              <div className="h-[40%] w-full border-y-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,.45)]" />
+            </div>
           </div>
         )}
 

@@ -32,11 +32,21 @@ function nativeDecoder(): FrameDecoder {
 }
 
 /**
- * Chỉ giải mã dải ngang giữa khung hình — đúng vùng khung ngắm trên màn hình.
- * Vừa nhanh hơn vừa đỡ bắt nhầm chữ in quanh tem.
+ * Chỉ giải mã dải ngang giữa khung hình — đúng vùng khung ngắm người dùng thấy.
+ *
+ * Thẻ video hiển thị bằng object-contain nên toàn bộ khung hình đều nằm trong
+ * tầm mắt, không bị cắt bớt hai bên. Nhờ vậy toạ độ ở đây khớp với những gì
+ * người dùng căn trên màn hình, và mã vạch giữ được gần trọn bề ngang gốc.
  */
-const BAND_W = 0.9
-const BAND_H = 0.34
+const BAND_W = 1
+const BAND_H = 0.4
+
+/**
+ * Bề ngang tối đa đưa vào giải mã. Mã Code 128 của kho có 165 mô-đun nên cần
+ * ít nhất khoảng 330px mới đọc nổi; thu nhỏ quá tay là nguyên nhân khiến bản
+ * trước không đọc được trên điện thoại.
+ */
+const MAX_DECODE_WIDTH = 1280
 
 async function zxingDecoder(): Promise<FrameDecoder> {
   const { BarcodeFormat, BinaryBitmap, DecodeHintType, HybridBinarizer, MultiFormatReader, RGBLuminanceSource } =
@@ -64,8 +74,8 @@ async function zxingDecoder(): Promise<FrameDecoder> {
       const sh = Math.round(video.videoHeight * BAND_H)
       const sx = Math.round((video.videoWidth - sw) / 2)
       const sy = Math.round((video.videoHeight - sh) / 2)
-      // Giới hạn bề ngang để iPhone không phải xử lý ảnh 4K mỗi khung hình
-      const scale = Math.min(1, 800 / sw)
+      // Giới hạn bề ngang để máy không phải xử lý ảnh 4K mỗi khung hình
+      const scale = Math.min(1, MAX_DECODE_WIDTH / sw)
       const w = Math.round(sw * scale)
       const h = Math.round(sh * scale)
       canvas.width = w
