@@ -1,0 +1,150 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   WMS VILUBE — Kho Bao Bì · Design tokens
+   (đồng bộ mockup Smartlog WMS / prototype Hương Thủy)
+   navy = app bar, nút, segment đang chọn · brand = giá trị dữ liệu
+   ============================================================ */
+@theme {
+  --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+
+  /* Navy — primary */
+  --color-navy-50: #eef2f7;
+  --color-navy-100: #d6e0eb;
+  --color-navy-700: #234974;
+  --color-navy-800: #1b3a5b;
+  --color-navy-900: #14304d;
+  --color-navy: #1b3a5b;
+
+  /* Brand blue — giá trị dữ liệu (mã đơn, ngày, số lô…) */
+  --color-brand-50: #eaf2ff;
+  --color-brand-500: #2563eb;
+  --color-brand-600: #1d4fd7;
+  --color-brand: #2563eb;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* Neutrals */
+  --color-field: #f1f3f6;
+  --color-field-border: #e3e7ec;
+  --color-line: #e9edf2;
+  --color-label: #6b7280;
+  --color-ink: #1f2430;
+  --color-muted: #9aa3b2;
+
+  --radius-card: 12px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: #eef1f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ẩn scrollbar trong khung điện thoại cho giống app native */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ô ngày: ẩn icon lịch mặc định của trình duyệt, để icon lịch của app
+   nằm đúng vị trí như mockup — vùng bấm vẫn mở được date picker */
+input[type='date']::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 44px;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+/* ============================================================
+   Khung máy handheld kho (rugged handheld) — dựng bằng CSS thuần
+   để luôn nằm chính giữa trình duyệt, không phụ thuộc layout trang.
+   Màn hình thật (<640px): bỏ khung, app chiếm trọn màn hình.
+   ============================================================ */
+.hh-stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  background: #eef1f5;
+}
+
+.hh-device {
+  position: relative;
+}
+
+.hh-screen {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* Thanh trạng thái giả lập của máy — chỉ hiện ở chế độ xem trên desktop */
+.hh-statusbar {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hh-stage {
+    padding: 28px 16px;
+    background: radial-gradient(120% 90% at 50% 0%, #f4f7fa 0%, #dfe4ea 55%, #cfd6df 100%);
+  }
+
+  /* Thân máy: nhựa cứng màu than chì, bezel dày như máy quét kho */
+  .hh-device {
+    border-radius: 30px;
+    padding: 18px 14px 26px;
+    background: linear-gradient(180deg, #333a42 0%, #23282e 42%, #1a1e23 100%);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.14) inset,
+      0 0 0 1px rgba(0, 0, 0, 0.55),
+      0 26px 60px -18px rgba(15, 23, 42, 0.65),
+      0 8px 20px -8px rgba(15, 23, 42, 0.35);
+  }
+
+  .hh-screen {
+    width: 400px;
+    height: min(790px, calc(100dvh - 150px));
+    border-radius: 12px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6) inset;
+  }
+
+  .hh-statusbar {
+    display: flex;
+  }
+}

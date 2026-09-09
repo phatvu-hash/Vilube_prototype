@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vilube-prototype",
+  "compatibility_date": "2026-09-09",
+  // App là SPA tĩnh (Vite build ra ./dist) — Worker chỉ phục vụ static assets.
+  // single-page-application: mọi route (vd /m/nhap/asn-1) đều trả index.html
+  // để react-router xử lý, tránh 404 khi mở link trực tiếp hoặc F5.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
