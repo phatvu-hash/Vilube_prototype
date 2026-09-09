@@ -35,6 +35,21 @@ const EN: Record<string, string> = {
   'Không còn mã nào để quét': 'No code left to scan',
   'Mô phỏng máy quét — chạm vào mã bên dưới để "quét".':
     'Scanner simulation — tap a code below to "scan" it.',
+
+  // ---------- Quét bằng camera ----------
+  'Quét bằng camera': 'Scan with camera',
+  'Đang mở camera…': 'Opening camera…',
+  'Đưa mã vạch nằm gọn trong khung, cách máy khoảng một gang tay.':
+    'Line the barcode up inside the frame, about a hand span from the device.',
+  'Chọn mã trong danh sách': 'Pick a code from the list',
+  'Bạn đã từ chối quyền dùng camera. Bật lại trong cài đặt trình duyệt rồi thử lại.':
+    'Camera access was denied. Enable it in your browser settings and try again.',
+  'Máy này không có camera dùng được.': 'No usable camera on this device.',
+  'Camera đang được ứng dụng khác dùng. Đóng ứng dụng đó rồi thử lại.':
+    'The camera is in use by another app. Close it and try again.',
+  'Không mở được camera trên máy này.': 'The camera could not be opened on this device.',
+  'Trình duyệt này không mở được camera. Dùng Safari hoặc Chrome bản mới.':
+    'This browser cannot open the camera. Use an up-to-date Safari or Chrome.',
   'Danh sách dòng hàng': 'Order lines',
   'Danh sách trống': 'No records',
 

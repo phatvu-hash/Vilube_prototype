@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
-import { ScanLine } from 'lucide-react'
+import { Camera, ScanLine } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
+import { Button } from '@/components/ui/Button'
 import { useT } from '@/i18n'
+import { CameraScanner } from '@/components/mobile/CameraScanner'
 
 export interface ScanOption {
   value: string
@@ -46,6 +48,7 @@ export function ScanField({
   emptyText = 'Không còn mã nào để quét',
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [camera, setCamera] = useState(false)
   const t = useT()
   // Enter rồi blur sẽ bắn 2 lần cùng một mã — chỉ xử lý lần đầu
   const lastCommitted = useRef<string | null>(null)
@@ -94,6 +97,11 @@ export function ScanField({
         title={sheetTitle ?? (/^qu[ée]t|^scan/i.test(label) ? label : t('Quét {0}', label.toLowerCase()))}
         onClose={() => setOpen(false)}
       >
+        <div className="px-2 pb-3 pt-1">
+          <Button block variant="outline" onClick={() => setCamera(true)}>
+            <Camera className="size-5" /> {t('Quét bằng camera')}
+          </Button>
+        </div>
         <p className="px-3.5 pb-2 text-[12px] text-muted">
           {t('Mô phỏng máy quét — chạm vào mã bên dưới để "quét".')}
         </p>
@@ -119,6 +127,18 @@ export function ScanField({
           </button>
         ))}
       </BottomSheet>
+
+      <CameraScanner
+        open={camera}
+        label={sheetTitle ?? label}
+        onDetect={(value) => {
+          onChange(value)
+          commit(value)
+          setCamera(false)
+          setOpen(false)
+        }}
+        onClose={() => setCamera(false)}
+      />
     </>
   )
 }
