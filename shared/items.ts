@@ -55,6 +55,14 @@ export const items: ItemMaster[] = [
   { id: '7203910', wh: 'NVL', code: '7203910', name: 'Phụ gia VII Viscoplex 8-310 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 175 },
   { id: '7301330', wh: 'NVL', code: '7301330', name: 'Phụ gia PPD Viscoplex 1-330 - phuy 60L', group: 'DRUM', packingCode: 'NVL-DRUM60', unitsPerCarton: 1, cartonsPerPallet: 9, kgPerCarton: 55 },
   { id: '7401001', wh: 'NVL', code: '7401001', name: 'Chất tạo màu dầu nhờn - phuy 60L', group: 'DRUM', packingCode: 'NVL-DRUM60', unitsPerCarton: 1, cartonsPerPallet: 9, kgPerCarton: 60 },
+
+  // Dầu nhờn Motul đóng phuy 200L — tem dán trên phuy là DrumID bốn phần
+  // (MTL001|2609101|200|DR0000001), xem shared/barcode.ts
+  { id: 'MTL001', wh: 'NVL', code: 'MTL001', name: 'Motul 300V Competition 5W-40 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 200 },
+  { id: 'MTL002', wh: 'NVL', code: 'MTL002', name: 'Motul 8100 X-clean 5W-40 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 200 },
+  { id: 'MTL003', wh: 'NVL', code: 'MTL003', name: 'Motul H-Tech 100 Plus 5W-30 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 200 },
+  { id: 'MTL004', wh: 'NVL', code: 'MTL004', name: 'Motul Multipower 20W-50 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 200 },
+  { id: 'MTL005', wh: 'NVL', code: 'MTL005', name: 'Motul Gear 300 75W-90 - phuy 200L', group: 'DRUM', packingCode: 'NVL-DRUM200', unitsPerCarton: 1, cartonsPerPallet: 4, kgPerCarton: 200 },
 ]
 
 export const itemById = Object.fromEntries(items.map((x) => [x.id, x]))

@@ -17,7 +17,7 @@ import type {
 import { itemByCode } from './items'
 import { kindOf, locationByCode, mkLotInternal, storageLocationsOf, whIdOfKind } from './catalog'
 import { baseUnit, unitsOf } from './uom'
-import { buildCartonBarcode } from './barcode'
+import { buildCartonBarcode, buildDrumBarcode } from './barcode'
 
 export interface SheetError {
   sheet: string
@@ -167,6 +167,7 @@ function buildPackages(
   rowNo: number,
   kho: string,
   itemCode: string,
+  lot: string,
 ): ReceivePackage[] | null {
   const soKien = r.SO_KIEN ?? ''
   const slMoi = r.SL_MOI_KIEN ?? ''
@@ -189,13 +190,27 @@ function buildPackages(
   const first = maDau.trim()
   if (kho === 'BB' && !/^\d{7}$/.test(first))
     return fail(ctx, rowNo, 'MA_KIEN_DAU', maDau, 'Kho BB cần mã kiện 7 chữ số để ghép barcode')
+  if (kho === 'NVL') {
+    // Tem phuy ngăn các phần bằng dấu sổ đứng nên mã phuy không được chứa ký tự đó
+    if (!/^[0-9A-Za-z][0-9A-Za-z._-]{0,19}$/.test(first))
+      return fail(
+        ctx, rowNo, 'MA_KIEN_DAU', maDau,
+        'Mã phuy chỉ gồm chữ, số và các dấu . _ - (không có dấu |)',
+      )
+    if (!lot.trim())
+      return fail(ctx, rowNo, 'SO_LO', r.SO_LO ?? '', 'Kho NVL có phuy dán tem thì bắt buộc có số lô')
+  }
 
   return Array.from({ length: n }, (_, i) => {
     const code = i === 0 ? first : nextPackageCode(first, i)
     return {
       code,
-      // chỉ kho Bao Bì mới ghép barcode; kho NVL quét thẳng DrumID
-      barcode: kho === 'BB' ? buildCartonBarcode(itemCode, qty, 'PCE', code) : undefined,
+      // Kho BB ghép tem carton, kho NVL ghép tem phuy — hai định dạng khác nhau,
+      // xem shared/barcode.ts
+      barcode:
+        kho === 'BB'
+          ? buildCartonBarcode(itemCode, qty, 'PCE', code)
+          : buildDrumBarcode(itemCode, lot.trim(), qty, code),
       qty,
       received: false,
     }
@@ -234,7 +249,7 @@ function buildAsns(csv: string, errors: SheetError[]): { asns: Asn[]; putaways: 
     const hsd = toIsoDate(r.HSD ?? '')
     if (hsd === null) return fail(ctx, rowNo, 'HSD', r.HSD ?? '', 'Ngày phải theo dạng dd/MM/yyyy')
 
-    const packages = buildPackages(ctx, r, rowNo, kho, item.code)
+    const packages = buildPackages(ctx, r, rowNo, kho, item.code, r.SO_LO ?? '')
     if (packages === null) return
 
     const daNhanRaw = (r.DA_NHAN ?? '').trim()
@@ -445,9 +460,60 @@ function buildPickOrders(csv: string, errors: SheetError[]): { orders: PickOrder
       expDate: hsd,
       qty: ton !== null && ton > 0 ? ton : qty * 2,
     })
+
+    const spare = spareDrum(line, item.kgPerCarton, ngayGiao, whId)
+    if (spare) inventory.push(spare)
   })
 
   return { orders: [...byKey.values()], inventory }
+}
+
+/**
+ * Phuy dự phòng khác lô — chỉ kho NVL.
+ *
+ * Phiếu soạn chỉ định sẵn một phuy cho mỗi dòng, nên nếu tồn chỉ có đúng phuy đó
+ * thì không dựng được tình huống nhân viên cầm nhầm phuy khác lô. Ở đây sinh
+ * thêm một phuy cùng mã hàng, cùng vị trí, lô mới hơn và hạn dùng muộn hơn:
+ * quét phuy này sẽ chạm cả hai cảnh báo "khác lô" và "sai FEFO" để demo bước
+ * hỏi Có / Không rồi đổi lô. Bỏ đoạn này khi nối tồn thật từ WMS.
+ */
+function spareDrum(line: PickLine, kgPerDrum: number, ngayGiao: string, whId: string): InventoryRow | null {
+  if (kindOf(whId) !== 'NVL') return null
+  const nsx = addDaysIso(line.mfgDate, 30)
+  const hsd = addDaysIso(line.expDate, 30)
+  if (!nsx || !hsd) return null
+  return {
+    id: `inv-${line.id}-spare`,
+    whId,
+    itemId: line.itemId,
+    locationId: line.locationId,
+    palletId: nextDrumId(line.palletId),
+    lot: nextLot(line.lot),
+    lotInternal: mkLotInternal(nsx, ngayGiao),
+    mfgDate: nsx,
+    expDate: hsd,
+    qty: kgPerDrum > 0 ? kgPerDrum : line.qtyRequired,
+  }
+}
+
+/** DRM080011 → DRM080511, giữ nguyên bề dài phần số */
+function nextDrumId(code: string): string {
+  const m = /^([A-Z]+)(\d+)$/.exec(code.toUpperCase())
+  if (!m) return `${code}-2`
+  return m[1] + String(Number(m[2]) + 500).padStart(m[2].length, '0')
+}
+
+/** 2711030000 → 2711030001; lô không phải số thì thêm hậu tố */
+function nextLot(lot: string): string {
+  return /^\d+$/.test(lot) ? String(Number(lot) + 1).padStart(lot.length, '0') : `${lot}B`
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  d.setDate(d.getDate() + days)
+  const p = (x: number) => String(x).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
 /** Dựng toàn bộ dữ liệu từ hai tab CSV */

@@ -6,7 +6,7 @@ import { mkLotInternal } from '@shared/catalog'
 import { toast } from '@/lib/toast'
 import { addDays, fmt, todayIso } from '@/lib/utils'
 import { baseUnit, fmtQty, fromUnit, toUnit, unitsOf } from '@shared/uom'
-import { UOM_BY_CODE, parseCartonBarcode } from '@shared/barcode'
+import { UOM_BY_CODE, parseCartonBarcode, parseDrumBarcode } from '@shared/barcode'
 import { useT } from '@/i18n'
 import { MobileAppBar } from '@/components/mobile/MobileAppBar'
 import { SegmentTabs } from '@/components/ui/SegmentTabs'
@@ -150,15 +150,39 @@ export function NhapDetail() {
     fillFromLine(found, uom, qtyBase)
   }
 
-  /** Kho NVL — quét DrumID, hệ thống tra phuy đã đăng ký trên đơn */
-  const onScanDrum = (code: string) => {
-    if (!code.trim()) return
-    const found = asn.lines.find((l) => l.packages.some((c) => c.code === code))
-    const pkg = found?.packages.find((c) => c.code === code)
-    if (!found || !pkg) return toast(t('Mã hàng {0} không thuộc đơn nhập này', code))
-    if (pkg.received) return toast(t('Mã carton {0} đã được quét — không nhận trùng', code))
+  /**
+   * Kho NVL — quét tem phuy.
+   * Tem: mã hàng / số lô / số lượng / mã phuy — hệ thống cắt chuỗi rồi đối chiếu
+   * từng phần với đơn nhập, sai phần nào báo đúng phần đó.
+   */
+  const onScanDrum = (raw: string) => {
+    if (!raw.trim()) return
+    const bc = parseDrumBarcode(raw)
+    if (!bc) return toast(t('Tem phuy sai định dạng — cần dạng MãHàng|SốLô|SốLượng|MãPhuy'))
+
+    // 1. Mã hàng phải thuộc đơn nhập
+    const found = asn.lines.find((l) => itemById[l.itemId]?.code.toUpperCase() === bc.itemCode)
+    if (!found) return toast(t('Mã hàng {0} không thuộc đơn nhập này', bc.itemCode))
+
+    // 2. Số lô trên tem phải khớp số lô của dòng hàng
+    if (found.lot && found.lot.toUpperCase() !== bc.lot)
+      return toast(t('Số lô {0} trên tem không khớp số lô {1} của đơn', bc.lot, found.lot))
+
+    // 3. Mã phuy phải có trên đơn và chưa quét lần nào
+    const pkg = found.packages.find((c) => c.code.toUpperCase() === bc.drumId)
+    if (!pkg) return toast(t('Mã phuy {0} không có trên đơn nhập này', bc.drumId))
+    if (pkg.received) return toast(t('Mã phuy {0} đã được quét — không nhận trùng', bc.drumId))
+
+    // 4. Số lượng trên tem phải khớp phuy đã đăng ký và không vượt số còn lại
+    if (bc.qty !== pkg.qty)
+      return toast(t('Số lượng {0} trên tem không khớp {1} của phuy trên đơn', fmt(bc.qty), fmt(pkg.qty)))
+    const left = found.qtyExpected - found.qtyReceived
+    if (bc.qty > left) return toast(t('Số lượng {0} vượt số còn lại {1} của đơn', fmt(bc.qty), fmt(left)))
+
     const it = itemById[found.itemId]
-    fillFromLine(found, baseUnit(it), Math.min(pkg.qty, found.qtyExpected - found.qtyReceived))
+    fillFromLine(found, baseUnit(it), bc.qty)
+    // đơn chưa ghi số lô thì lấy luôn số lô in trên tem
+    if (!found.lot) setLot(bc.lot)
   }
 
   /** Chọn mặt hàng ở thẻ khác nhãn / đơn NVL không có phuy đăng ký sẵn */
@@ -195,11 +219,13 @@ export function NhapDetail() {
     if (!lot.trim()) return toast(t('Số lô đang trống — nhập hoặc chọn số lô'))
     if (qty > remaining) return toast(t('Số lượng {0} vượt số còn lại {1} của đơn', fmt(qty), fmt(remaining)))
 
-    // Mã kiện dùng để đánh dấu đã nhận + mã pallet/phuy đưa sang công việc cất hàng
+    // Mã kiện dùng để đánh dấu đã nhận + mã pallet/phuy đưa sang công việc cất hàng.
+    // Kho NVL lấy mã phuy cắt ra từ tem, không lấy nguyên chuỗi vừa quét.
     const bc = scanMode && !isNvl ? parseCartonBarcode(scanCode) : null
-    const packageCode = isNvl ? scanCode.trim() : (bc?.checkCode ?? undefined)
+    const drum = scanMode && isNvl ? parseDrumBarcode(scanCode) : null
+    const packageCode = isNvl ? drum?.drumId : (bc?.checkCode ?? undefined)
     const palletId = isNvl
-      ? scanCode.trim() || `DRM-${asn.code.slice(-4)}-${asn.lines.indexOf(line) + 1}`
+      ? (drum?.drumId ?? `DRM-${asn.code.slice(-4)}-${asn.lines.indexOf(line) + 1}`)
       : tab === 'khac'
         ? palletCode.trim()
         : `PLT-${asn.code.slice(-4)}-${asn.lines.indexOf(line) + 1}`

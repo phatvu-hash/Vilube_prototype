@@ -71,7 +71,7 @@ describe('buildDataSet — đơn nhập', () => {
     expect(pkgs[2].barcode).toBe('9082228|3000|PCE|0008085')
   })
 
-  it('kho NVL quét thẳng DrumID nên không ghép barcode', () => {
+  it('kho NVL ghép tem phuy MãHàng|SốLô|SốLượng|MãPhuy', () => {
     const d = buildDataSet(
       inbound(
         'NVL,26000000010,MDNVL2400115,SK Enmove,20/08/2024,Nhập Nhà cung cấp,,7101500,540,2711050000,12/06/2026,12/06/2029,3,180,DRM100001,',
@@ -80,7 +80,40 @@ describe('buildDataSet — đơn nhập', () => {
     )
     const pkgs = d.asns[0].lines[0].packages
     expect(pkgs.map((p) => p.code)).toEqual(['DRM100001', 'DRM100002', 'DRM100003'])
-    expect(pkgs[0].barcode).toBeUndefined()
+    expect(pkgs[0].barcode).toBe('7101500|2711050000|180|DRM100001')
+    expect(pkgs[2].barcode).toBe('7101500|2711050000|180|DRM100003')
+  })
+
+  it('kho NVL có phuy dán tem mà thiếu số lô thì báo lỗi ngay dòng đó', () => {
+    const d = buildDataSet(
+      inbound(
+        'NVL,26000000013,MDNVL2400118,Motul,10/09/2026,Nhập Nhà cung cấp,,MTL001,800,,01/09/2026,01/09/2029,4,200,DR0000001,',
+      ),
+      outbound(),
+    )
+    expect(d.errors[0]).toMatchObject({ sheet: 'DON_NHAP', row: 2, column: 'SO_LO' })
+    expect(d.asns).toHaveLength(0)
+  })
+
+  it('mã phuy có dấu sổ đứng thì bị chặn vì làm vỡ tem', () => {
+    const d = buildDataSet(
+      inbound(
+        'NVL,26000000013,MDNVL2400118,Motul,10/09/2026,Nhập Nhà cung cấp,,MTL001,800,2609101,01/09/2026,01/09/2029,4,200,DR|0000001,',
+      ),
+      outbound(),
+    )
+    expect(d.errors[0]).toMatchObject({ column: 'MA_KIEN_DAU', value: 'DR|0000001' })
+  })
+
+  it('đơn phuy Motul trong bộ mẫu dựng đủ 4 phuy mỗi mã hàng', () => {
+    const d = sampleDataSet()
+    const asn = d.asns.find((a) => a.code === '26000000013')!
+    expect(asn.lines).toHaveLength(4)
+    expect(asn.lines[0].packages.map((p) => p.code)).toEqual([
+      'DR0000001', 'DR0000002', 'DR0000003', 'DR0000004',
+    ])
+    expect(asn.lines[0].packages[0].barcode).toBe('MTL001|2609101|200|DR0000001')
+    expect(asn.lines[3].packages[3].barcode).toBe('MTL004|2609104|200|DR0000016')
   })
 
   it('bỏ trống ba cột kiện nghĩa là hàng chưa dán tem', () => {

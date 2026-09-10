@@ -104,6 +104,23 @@ chưa khai báo → vượt số còn lại. Việc kiểm tra chạy khi **bắ
 chọn trong danh sách mô phỏng) chứ không theo từng ký tự gõ tay — giống máy quét thật nạp trọn
 chuỗi rồi mới gửi Enter.
 
+## Barcode tem phuy (kho NVL)
+
+```
+MTL001 / 2609101 / 200 / DR0000001
+mã hàng   số lô    SL kg  mã phuy
+```
+
+Khác tem carton ở chỗ số lô nằm ngay trên tem: phuy nguyên liệu bắt buộc truy xuất theo lô.
+App cắt chuỗi rồi đối chiếu từng phần với đơn nhập, sai phần nào báo đúng phần đó — mã hàng
+không thuộc đơn → số lô lệch với đơn → mã phuy không có trên đơn → phuy đã quét rồi → số lượng
+lệch với phuy đã đăng ký → vượt số còn lại.
+
+Tem của mỗi phuy được dựng từ chính dòng đơn nhập trong Sheet (`MA_HANG`, `SO_LO`,
+`SL_MOI_KIEN`, `MA_KIEN_DAU` tăng dần), nên Sheet không cần thêm cột nào. Vì dấu `/` là ký tự
+ngăn cách, mã phuy trong `MA_KIEN_DAU` không được chứa dấu này, và dòng NVL có phuy dán tem
+bắt buộc phải có `SO_LO`.
+
 ## Cấu trúc
 
 ```
@@ -112,7 +129,7 @@ shared/          dùng chung app + Worker, chỉ import tương đối
   items.ts       masterdata hàng hoá (demo)
   catalog.ts     kho, vị trí, loại đơn
   uom.ts         quy đổi đơn vị theo quy cách
-  barcode.ts     đọc / dựng barcode tem carton
+  barcode.ts     đọc / dựng barcode tem carton (BB) và tem phuy (NVL)
   sheet.ts       parse CSV → đơn nhập, đơn xuất, tồn, công việc cất hàng
   sheet.test.ts  vitest cho toàn bộ shared/sheet.ts
   sample.ts      CSV mẫu — vừa là bản dự phòng, vừa là nội dung template

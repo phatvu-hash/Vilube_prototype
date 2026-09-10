@@ -29,6 +29,8 @@ interface Props {
   emphasis?: boolean
   sheetTitle?: string
   emptyText?: string
+  /** Lớp CSS thêm cho khung field — dùng khi xếp field cạnh một nút khác */
+  className?: string
 }
 
 /**
@@ -46,6 +48,7 @@ export function ScanField({
   emphasis,
   sheetTitle,
   emptyText = 'Không còn mã nào để quét',
+  className,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [camera, setCamera] = useState(false)
@@ -59,7 +62,7 @@ export function ScanField({
   }
   return (
     <>
-      <div className="flex items-center gap-2 rounded-lg bg-field px-3.5 py-2">
+      <div className={cn('flex items-center gap-2 rounded-lg bg-field px-3.5 py-2', className)}>
         <label className="min-w-0 flex-1">
           <span className="block text-[11px] font-medium uppercase tracking-wide text-label">
             {label}

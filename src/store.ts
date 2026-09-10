@@ -8,7 +8,7 @@ import type {
   Role,
   WarehouseKind,
 } from '@shared/types'
-import { WH_BB, kindOf, mkLotInternal, storageLocationsOf } from '@shared/catalog'
+import { WH_BB, confirmLocationOf, kindOf, mkLotInternal, storageLocationsOf } from '@shared/catalog'
 import type { SheetError } from '@shared/sheet'
 import { sampleDataSet } from '@shared/sample'
 
@@ -52,6 +52,21 @@ export interface ReceivePayload {
   lotInternal: string
 }
 
+/**
+ * Phuy/lô thực tế nhân viên quét được ở màn soạn hàng.
+ *
+ * Khác phuy ghi trên dòng phiếu nghĩa là người soạn đã đổi lô sau khi bấm CÓ ở
+ * popup cảnh báo: dòng phiếu chuyển sang phuy này, phuy cũ được nhả khỏi phiếu
+ * và giữ nguyên trong tồn.
+ */
+export interface PickSource {
+  palletId: string
+  lot: string
+  lotNcc: string
+  mfgDate: string
+  expDate: string
+}
+
 interface AppState {
   user: SessionUser
   /** Kho đang thao tác — null nghĩa là chưa qua màn hình Chọn kho */
@@ -82,8 +97,10 @@ interface AppState {
   receiveDirect: (data: Omit<DirectReceipt, 'id' | 'whId'>) => void
   /** Cất hàng: xác nhận đưa pallet/phuy vào vị trí → cộng tồn */
   putaway: (taskId: string, palletId: string, locationId: string) => void
-  /** Soạn hàng: xác nhận số lượng đã soạn cho 1 dòng → trừ tồn */
-  pick: (orderId: string, lineId: string, qty: number) => void
+  /** Soạn hàng: xác nhận số lượng đã soạn cho 1 dòng → trừ tồn phuy đã quét */
+  pick: (orderId: string, lineId: string, qty: number, source?: PickSource) => void
+  /** Chiết rót: unpick phần soạn vượt của 1 phuy ra vị trí confirm */
+  decant: (orderId: string, lineId: string, qty: number) => void
 }
 
 let seq = 100
@@ -94,6 +111,24 @@ export function nextSuggestion(whId: string, currentLocationId: string): string 
   const list = storageLocationsOf(whId)
   const idx = list.findIndex((l) => l.id === currentLocationId)
   return list[(idx + 1) % list.length].id
+}
+
+/**
+ * Mọi mã pallet/phuy đã xuất hiện trong hệ thống của kho đang thao tác:
+ * tồn, việc cất hàng đang chờ, phiếu soạn, kiện đăng ký sẵn trên đơn nhập và
+ * các lần nhập chủ động. Dùng làm cơ sở sinh mã mới không trùng (nút Gen ID).
+ */
+export function usedPackageIds(whId?: string | null): string[] {
+  const s = useApp.getState()
+  const wh = whId ?? s.warehouseId
+  const ofWh = <T extends { whId: string }>(x: T) => !wh || x.whId === wh
+  return [
+    ...s.inventory.filter(ofWh).map((x) => x.palletId),
+    ...s.putaways.filter(ofWh).flatMap((t) => t.pallets.map((p) => p.palletId)),
+    ...s.pickOrders.filter(ofWh).flatMap((o) => o.lines.map((l) => l.palletId)),
+    ...s.asns.filter(ofWh).flatMap((a) => a.lines.flatMap((l) => l.packages.map((p) => p.code))),
+    ...s.receipts.filter(ofWh).map((r) => r.palletId),
+  ].filter(Boolean)
 }
 
 export const useApp = create<AppState>((set) => ({
@@ -299,7 +334,7 @@ export const useApp = create<AppState>((set) => ({
       return { putaways, inventory }
     }),
 
-  pick: (orderId, lineId, qty) =>
+  pick: (orderId, lineId, qty, source) =>
     set((s) => {
       const order = s.pickOrders.find((o) => o.id === orderId)
       const line = order?.lines.find((l) => l.id === lineId)
@@ -308,22 +343,85 @@ export const useApp = create<AppState>((set) => ({
       const pickOrders = s.pickOrders.map((o) => {
         if (o.id !== orderId) return o
         const lines = o.lines.map((l) =>
-          l.id === lineId ? { ...l, qtyPicked: Math.min(l.qtyRequired, l.qtyPicked + qty) } : l,
+          l.id === lineId
+            ? {
+                ...l,
+                // Đổi lô: dòng phiếu bám theo phuy vừa quét, phuy cũ không còn bị giữ
+                ...(source
+                  ? {
+                      palletId: source.palletId,
+                      lot: source.lot,
+                      lotNcc: source.lotNcc || l.lotNcc,
+                      mfgDate: source.mfgDate || l.mfgDate,
+                      expDate: source.expDate || l.expDate,
+                    }
+                  : null),
+                qtyPicked: Math.min(l.qtyRequired, l.qtyPicked + qty),
+              }
+            : l,
         )
         const all = lines.every((l) => l.qtyPicked >= l.qtyRequired)
         const any = lines.some((l) => l.qtyPicked > 0)
         return { ...o, lines, status: all ? ('PICKED' as const) : any ? ('PICKING' as const) : o.status }
       })
 
+      // Trừ đúng phuy đã quét; không tra được phuy thì lùi về trừ theo mã hàng + vị trí
+      const palletId = source?.palletId ?? line.palletId
+      const target = s.inventory.find(
+        (r) => r.palletId === palletId && r.locationId === line.locationId && r.itemId === line.itemId,
+      )
       const inventory = s.inventory
-        .map((r) =>
-          r.itemId === line.itemId && r.locationId === line.locationId
-            ? { ...r, qty: Math.max(0, r.qty - qty) }
-            : r,
-        )
+        .map((r) => {
+          const hit = target
+            ? r.id === target.id
+            : r.itemId === line.itemId && r.locationId === line.locationId
+          return hit ? { ...r, qty: Math.max(0, r.qty - qty) } : r
+        })
         .filter((r) => r.qty > 0)
 
       return { pickOrders, inventory }
+    }),
+
+  decant: (orderId, lineId, qty) =>
+    set((s) => {
+      const order = s.pickOrders.find((o) => o.id === orderId)
+      const line = order?.lines.find((l) => l.id === lineId)
+      const confirmLoc = order ? confirmLocationOf(order.whId) : undefined
+      if (!order || !line || !confirmLoc || qty <= 0) return {}
+
+      // Phần soạn vượt rời khỏi vị trí lấy hàng…
+      let left = qty
+      const inventory = s.inventory
+        .map((r) => {
+          if (left <= 0 || r.itemId !== line.itemId || r.locationId !== line.locationId) return r
+          const take = Math.min(r.qty, left)
+          left -= take
+          return { ...r, qty: r.qty - take }
+        })
+        .filter((r) => r.qty > 0)
+
+      // …và nằm lại ở vị trí confirm dưới đúng mã phuy đó
+      const idx = inventory.findIndex(
+        (r) => r.itemId === line.itemId && r.locationId === confirmLoc.id && r.palletId === line.palletId,
+      )
+      if (idx >= 0) {
+        inventory[idx] = { ...inventory[idx], qty: inventory[idx].qty + qty }
+      } else {
+        inventory.push({
+          id: nextId('inv'),
+          whId: order.whId,
+          itemId: line.itemId,
+          locationId: confirmLoc.id,
+          palletId: line.palletId,
+          lot: line.lot,
+          lotInternal: mkLotInternal(line.mfgDate, order.deliveryDate),
+          mfgDate: line.mfgDate,
+          expDate: line.expDate,
+          qty,
+        })
+      }
+
+      return { inventory }
     }),
 
 }))

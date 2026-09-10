@@ -164,6 +164,15 @@ const EN: Record<string, string> = {
   'Mã hàng {0} không thuộc đơn nhập này': 'Item {0} does not belong to this inbound order',
   'Số lượng {0} vượt số còn lại {1} của đơn': 'Quantity {0} exceeds the remaining {1} on the order',
   'Đơn vị {0} trong barcode chưa được khai báo': 'Barcode unit {0} is not mapped',
+  'Tem phuy sai định dạng — cần dạng MãHàng|SốLô|SốLượng|MãPhuy':
+    'Invalid drum label — expected ItemCode|Lot|Qty|DrumID',
+  'Số lô {0} trên tem không khớp số lô {1} của đơn':
+    'Lot {0} on the label does not match lot {1} on the order',
+  'Mã phuy {0} không có trên đơn nhập này': 'Drum {0} is not registered on this inbound order',
+  'Mã phuy {0} đã được quét — không nhận trùng':
+    'Drum {0} has already been scanned — duplicate not accepted',
+  'Số lượng {0} trên tem không khớp {1} của phuy trên đơn':
+    'Quantity {0} on the label does not match {1} registered for this drum',
 
   // ---------- Cất hàng ----------
   'Không tìm thấy công việc': 'Job not found',
@@ -205,6 +214,30 @@ const EN: Record<string, string> = {
   'Quét mã DRUM ID tại vị trí trước khi soạn': 'Scan the DRUM ID at the location before picking',
   'Pallet không khớp — cần quét {0}': 'Wrong pallet — {0} is required',
   'Phuy không khớp — cần quét {0}': 'Wrong drum — {0} is required',
+
+  // Quét tem phuy ở màn soạn hàng — lỗi chặn
+  'Phuy {0} không tồn tại trong kho': 'Drum {0} does not exist in the warehouse',
+  'Phuy {0} thuộc mã hàng {1} — không nằm trong phiếu soạn này':
+    'Drum {0} holds item {1} — it is not on this pick list',
+  'Phuy {0} đang ở vị trí {1} — không phải vị trí đang soạn':
+    'Drum {0} sits at location {1} — not the location being picked',
+  'Quét lại tem phuy — mã hiện tại chưa được hệ thống chấp nhận':
+    'Scan the drum label again — the current code has not been accepted',
+  'Số lượng soạn {0} vượt {1} ghi trên tem phuy {2}':
+    'Picked quantity {0} exceeds the {1} printed on drum label {2}',
+
+  // Lô không đáp ứng — popup Có / Không rồi đổi lô
+  'Phuy {0}: {1}. Vẫn soạn phuy này?': 'Drum {0}: {1}. Pick this drum anyway?',
+  'lô {0} đã hết hạn ngày {1}': 'lot {0} expired on {1}',
+  'lô {0} chỉ còn {1} ngày sử dụng (HSD {2})': 'lot {0} has only {1} days left (expiry {2})',
+  'lô {0} khác lô đề xuất {1}': 'lot {0} differs from the suggested lot {1}',
+  'còn lô {0} hạn dùng sớm hơn ({1}) chưa xuất':
+    'lot {0} expires earlier ({1}) and has not been issued yet',
+  'Đã đổi sang phuy {0} · phuy {1} trả về tồn':
+    'Swapped to drum {0} · drum {1} released back to stock',
+  'lô {0}': 'lot {0}',
+  'lô đề xuất': 'suggested lot',
+  'khác lô': 'other lot',
   'Nhập số lượng đã soạn ở ô XÁC NHẬN SỐ LƯỢNG': 'Enter the picked quantity in CONFIRM QUANTITY',
   'Số lượng soạn {0} vượt số còn lại {1} của dòng':
     'Picked quantity {0} exceeds the remaining {1} on this line',
@@ -238,6 +271,50 @@ const EN: Record<string, string> = {
   'KHÔNG': 'NO',
   'Tem pallet': 'Pallet label',
   'Tem phuy': 'Drum label',
+
+  // ---------- Nhập hàng chủ động: 2 trường hợp có / chưa có mã kiện ----------
+  'Quét tem phuy': 'Scan the drum label',
+  'Quét tem phuy hoặc bấm nút sinh mã DRUM ID': 'Scan a drum label or tap the button to generate a DRUM ID',
+  'Quét tem pallet hoặc bấm nút sinh mã PALLET ID': 'Scan a pallet label or tap the button to generate a PALLET ID',
+  'Sinh {0} mới': 'Generate a new {0}',
+  'Chọn mặt hàng ở ô SKU - Tên hàng trước khi sinh mã': 'Pick an item in SKU - Item name before generating a code',
+  'Đã sinh {0} {1}': '{0} {1} generated',
+  'Đã đọc tem {0} · {1} · {2} {3} — sửa số lượng nếu tồn thực tế khác':
+    'Label {0} read · {1} · {2} {3} — adjust the quantity if the actual stock differs',
+  'Mã hàng {0} trên tem không có trong danh mục kho này':
+    'Item code {0} on the label is not in this warehouse catalogue',
+  '{0} {1} đã có trong hệ thống — kiểm tra lại trước khi nhận':
+    '{0} {1} already exists in the system — double-check before receiving',
+  'Thông tin lấy từ tem — chỉ sửa số lượng cho khớp tồn thực tế.':
+    'Data comes from the label — only the quantity can be adjusted to the actual stock.',
+  'Đã có tem thì quét thẳng; chưa có tem thì chọn SKU rồi bấm ⟳ để sinh mã.':
+    'Already labelled: scan it. Not labelled yet: pick the SKU then tap ⟳ to generate a code.',
+  'Khớp số lượng in trên tem ({0} {1})': 'Matches the quantity printed on the label ({0} {1})',
+  'Tem ghi {0} {1} · lệch {2} {3}': 'Label says {0} {1} · difference {2} {3}',
+
+  // ---------- Chiết rót ----------
+  'Chiết rót': 'Decanting',
+  'Đơn soạn hàng (Mã phiếu soạn WMS)': 'Pick order (WMS pick ticket)',
+  'Kho này chưa có phiếu soạn nào': 'This warehouse has no pick ticket yet',
+  'Quét mã phiếu soạn WMS trước': 'Scan the WMS pick ticket first',
+  'Quét DRUM ID đã soạn': 'Scan the picked DRUM ID',
+  'Phuy {0} không có trên phiếu soạn {1}': 'Drum {0} is not on pick ticket {1}',
+  'Phiếu này không còn phuy nào soạn vượt': 'No drum on this ticket is over-picked any more',
+  'Phuy này không có SL soạn vượt — không cần chiết rót':
+    'This drum has no over-picked quantity — no decanting needed',
+  'SL trên tem phuy ({0})': 'Quantity on the drum label ({0})',
+  'SL đơn cần soạn ({0})': 'Quantity the order needs ({0})',
+  'Số lượng cần chiết rót ({0})': 'Quantity to decant ({0})',
+  'Nhập số lượng cần chiết rót': 'Enter the quantity to decant',
+  'SL chiết rót {0} vượt SL soạn vượt {1} của phuy':
+    'Decanting {0} exceeds the drum over-pick of {1}',
+  'Kho này chưa khai báo vị trí confirm': 'This warehouse has no confirm location set up',
+  'Đã chiết rót {0} {1} · unpick về vị trí {2}': 'Decanted {0} {1} · unpicked to location {2}',
+  'XÁC NHẬN CHIẾT RÓT': 'CONFIRM DECANTING',
+  'Vị trí confirm': 'Confirm location',
+  'cần soạn {0}': 'needs {0}',
+  'tem phuy {0}': 'label {0}',
+  'vượt {0}': 'over {0}',
 
   // ---------- Loại đơn nhập ----------
   'Nhập Nhà cung cấp': 'Supplier receipt',

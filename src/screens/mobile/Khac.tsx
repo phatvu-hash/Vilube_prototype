@@ -1,18 +1,23 @@
 import { useNavigate } from 'react-router-dom'
-import { Warehouse, Blocks, Download } from 'lucide-react'
+import { Warehouse, Blocks, Download, Droplets } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useT } from '@/i18n'
+import { useWhKind } from '@/store'
 import { ScreenScroll } from '@/components/mobile/parts'
 
+/** nvlOnly: chiết rót là việc của phuy nguyên vật liệu, kho Bao Bì không có */
 const TILES = [
   { key: 'ton', label: 'Tồn Kho', icon: Warehouse, to: '' },
   { key: 'dichuyen', label: 'Di Chuyển', icon: Blocks, to: '' },
   { key: 'nhap', label: 'Nhập hàng', icon: Download, to: '/m/nhan-hang' },
+  { key: 'chietrot', label: 'Chiết rót', icon: Droplets, to: '/m/chiet-rot', nvlOnly: true },
 ]
 
 export function Khac() {
   const nav = useNavigate()
   const t = useT()
+  const kind = useWhKind()
+  const tiles = TILES.filter((x) => !x.nvlOnly || kind === 'NVL')
   return (
     <>
       <header className="shrink-0 px-4 pb-2 pt-4">
@@ -20,7 +25,7 @@ export function Khac() {
       </header>
       <ScreenScroll className="px-4 py-3">
         <div className="grid grid-cols-2 gap-3">
-          {TILES.map(({ key, label, icon: Icon, to }) => (
+          {tiles.map(({ key, label, icon: Icon, to }) => (
             <button
               key={key}
               type="button"

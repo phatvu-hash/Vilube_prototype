@@ -10,6 +10,7 @@ import { CatDetail } from '@/screens/mobile/CatDetail'
 import { SoanDetail } from '@/screens/mobile/SoanDetail'
 import { Khac } from '@/screens/mobile/Khac'
 import { NhanHang } from '@/screens/mobile/NhanHang'
+import { ChietRot } from '@/screens/mobile/ChietRot'
 import { CaNhan } from '@/screens/mobile/CaNhan'
 
 /** Chưa chọn kho thì không vào được màn hình chính */
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="soan/:orderId" element={<SoanDetail />} />
         <Route path="khac" element={<Khac />} />
         <Route path="nhan-hang" element={<NhanHang />} />
+        <Route path="chiet-rot" element={<ChietRot />} />
         <Route path="canhan" element={<CaNhan />} />
       </Route>
       <Route path="*" element={<Navigate to="/kho" replace />} />

@@ -24,8 +24,13 @@ const TAB_INBOUND = 'DON_NHAP'
 const TAB_OUTBOUND = 'DON_XUAT'
 const CACHE_SECONDS = 60
 
+/**
+ * headers=1 là bắt buộc: thiếu nó, Google tự đoán số dòng tiêu đề và khi cả bảng
+ * toàn ô chữ (số nhập dạng text) nó gộp luôn mấy chục dòng đầu vào tiêu đề —
+ * app nhận về bảng rỗng mà không có lỗi nào để báo.
+ */
 const csvUrl = (sheetId: string, tab: string) =>
-  `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`
+  `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(tab)}`
 
 /** Google trả trang HTML khi Sheet chưa được chia sẻ — nhận ra để báo cho đúng */
 const looksLikeHtml = (text: string) => text.trimStart().startsWith('<')

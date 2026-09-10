@@ -66,6 +66,9 @@ export const locations: Location[] = [
 export const locationById = Object.fromEntries(locations.map((l) => [l.id, l]))
 export const storageLocationsOf = (whId: string) =>
   locations.filter((l) => l.whId === whId && l.type === 'storage')
+/** Vị trí confirm — nơi hàng soạn vượt được unpick về sau khi chiết rót */
+export const confirmLocationOf = (whId: string) =>
+  locations.find((l) => l.whId === whId && l.type === 'staging')
 /** Tra vị trí theo mã hiển thị (A1.1) trong phạm vi một kho */
 export const locationByCode = (whId: string, code: string) =>
   locations.find((l) => l.whId === whId && l.code.toUpperCase() === code.trim().toUpperCase())
