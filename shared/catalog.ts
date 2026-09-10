@@ -73,6 +73,14 @@ export const confirmLocationOf = (whId: string) =>
 export const locationByCode = (whId: string, code: string) =>
   locations.find((l) => l.whId === whId && l.code.toUpperCase() === code.trim().toUpperCase())
 
+/**
+ * Đường dẫn tài liệu và bảng tính dùng chung — hiện ở màn Khác để người xem
+ * prototype biết đơn hàng được tạo ở đâu và tra cứu thao tác ở đâu.
+ */
+export const DOC_URL = '/hdsd/'
+export const SHEET_URL =
+  'https://docs.google.com/spreadsheets/d/1YkHb9g1XmhQ_efIPoxShbfftprJ-uS8p-yX7NBzYLxA/edit'
+
 export const inboundTypes = [
   'Nhập Nhà cung cấp',
   'Nhập BTP từ Sản xuất',
