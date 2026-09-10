@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { Warehouse, Blocks, Download, Droplets, BookOpen, FileSpreadsheet } from 'lucide-react'
+import { Warehouse, Blocks, Download, Droplets, BookOpen, FileSpreadsheet, FileText } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { useT } from '@/i18n'
 import { useWhKind } from '@/store'
-import { DOC_URL, SHEET_URL } from '@shared/catalog'
+import { DOC_URL, DOCS_URL, SHEET_URL } from '@shared/catalog'
 import { ScreenScroll } from '@/components/mobile/parts'
 
 /**
@@ -16,6 +16,7 @@ const TILES = [
   { key: 'nhap', label: 'Nhập hàng', icon: Download, to: '/m/nhan-hang' },
   { key: 'chietrot', label: 'Chiết rót', icon: Droplets, to: '/m/chiet-rot', nvlOnly: true },
   { key: 'hdsd', label: 'Hướng dẫn sử dụng', icon: BookOpen, href: DOC_URL },
+  { key: 'docs', label: 'Bản Google Docs', icon: FileText, href: DOCS_URL },
   { key: 'sheet', label: 'Bảng tính nhập đơn', icon: FileSpreadsheet, href: SHEET_URL },
 ]
 

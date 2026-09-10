@@ -80,6 +80,9 @@ export const locationByCode = (whId: string, code: string) =>
 export const DOC_URL = '/hdsd/'
 export const SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1YkHb9g1XmhQ_efIPoxShbfftprJ-uS8p-yX7NBzYLxA/edit'
+/** Bản Google Docs của HDSD — dùng khi cần tải về Word hoặc góp ý trực tiếp */
+export const DOCS_URL =
+  'https://docs.google.com/document/d/1CBU3Au851LnYnK-o_tRtWcvCx2QwSQRq8G00vuqiV1o/edit'
 
 export const inboundTypes = [
   'Nhập Nhà cung cấp',

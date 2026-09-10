@@ -253,6 +253,7 @@ const EN: Record<string, string> = {
   'Nhập hàng': 'Inbound',
   'Hướng dẫn sử dụng': 'User guide',
   'Bảng tính nhập đơn': 'Order spreadsheet',
+  'Bản Google Docs': 'Google Docs copy',
   'Chức năng này chưa có trong tài liệu HDSD — sẽ bổ sung sau':
     'This function is not described in the user guide yet',
   'Loại đơn hàng nhập': 'Inbound order type',
